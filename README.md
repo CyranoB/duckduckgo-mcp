@@ -15,7 +15,14 @@ A Model Context Protocol (MCP) server that allows searching the web using DuckDu
 2. Install dependencies:
 
 ```bash
-uv pip install -r requirements.txt
+# Basic installation
+uv pip install -e .
+
+# With uvx support
+uv pip install -e ".[uvx]"
+
+# With uvicorn support
+uv pip install -e ".[uvicorn]"
 ```
 
 ## Usage
@@ -67,8 +74,6 @@ This MCP server can be used with any LLM tool that supports the Model Context Pr
 # Example using Claude Code
 claude code --mcp duckduckgo_search.py
 ```
-
-Then you can ask the LLM to search the web using DuckDuckGo.
 
 ## API
 

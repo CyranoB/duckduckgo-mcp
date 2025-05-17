@@ -14,7 +14,10 @@ The implementation uses the FastMCP library to create an MCP server that communi
 
 ```bash
 # Install dependencies
-uv pip install -r requirements.txt
+uv pip install -e .
+
+# With uvx support
+uv pip install -e ".[uvx]"
 ```
 
 ### Running the MCP Server
