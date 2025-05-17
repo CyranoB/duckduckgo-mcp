@@ -59,6 +59,6 @@ where = ["src"]
 include = ["duckduckgo_mcp", "duckduckgo_mcp.*"]
 
 [tool.setuptools_scm]
-version_scheme = "post-release"
-local_scheme = "node-and-date"
 write_to = "src/duckduckgo_mcp/_version.py"
+version_scheme = "post-release"
+local_scheme = "no-local-version"  # This removes the local version component

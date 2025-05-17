@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for setuptools_scm
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,7 +36,7 @@ jobs:
           
       - name: Generate dynamic version
         run: |
-          pip install setuptools_scm
+          uv pip install setuptools_scm
           dynamic_version=$(python -c "from setuptools_scm import get_version; print(get_version())")
           echo "VERSION=$dynamic_version" >> $GITHUB_ENV
 
