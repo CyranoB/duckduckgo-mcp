@@ -18,7 +18,7 @@ jobs:
           
       - name: Install uv
         run: |
-          curl -sSfL https://astral.sh/uv/install.sh | sh -s -- -y
+          curl -sSfL https://astral.sh/uv/install.sh | sh -s --
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           
       - name: Install dependencies
