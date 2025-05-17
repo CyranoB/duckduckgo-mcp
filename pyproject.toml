@@ -4,6 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "duckduckgo-mcp"
+dynamic = ["version"]
 description = "DuckDuckGo search tool for MCP (Model Context Protocol)"
 readme = "README.md"
 authors = [
