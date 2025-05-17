@@ -3,27 +3,40 @@
 DuckDuckGo Search MCP Tool
 
 This tool allows searching the web using DuckDuckGo through the MCP (Model Context Protocol) framework.
-It can be run using 'mcp run' command.
+It integrates with the duckduckgo_search library to provide reliable search results.
 """
 
-import json
-import requests
-import argparse
 import sys
-from bs4 import BeautifulSoup
+import json
+import logging
+import argparse
 from typing import Dict, Any, List, Optional
 from fastmcp import FastMCP
+from duckduckgo_search import DDGS
+from duckduckgo_search.exceptions import DuckDuckGoSearchException
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 # Create the MCP server
 mcp = FastMCP(name="duckduckgo_search")
 
-def search_duckduckgo(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+def search_duckduckgo(query: str, max_results: int = 5, 
+                      safesearch: str = "moderate", region: str = "wt-wt",
+                      timeout: int = 15) -> List[Dict[str, str]]:
     """
-    Search DuckDuckGo and return parsed results.
+    Search DuckDuckGo using the duckduckgo_search library and return parsed results.
     
     Args:
         query: The search query string
         max_results: Maximum number of results to return
+        safesearch: Safe search setting ('on', 'moderate', 'off')
+        region: Region code for localized results (default: wt-wt for no region)
+        timeout: Request timeout in seconds
         
     Returns:
         List of dictionaries containing search results with title, url, and snippet
@@ -35,76 +48,79 @@ def search_duckduckgo(query: str, max_results: int = 5) -> List[Dict[str, str]]:
     if not isinstance(max_results, int) or max_results <= 0:
         raise ValueError("max_results must be a positive integer")
     
-    # Set up headers to mimic a browser request
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-    
-    # Format the query for the URL
-    formatted_query = query.replace(' ', '+')
-    url = f"https://html.duckduckgo.com/html/?q={formatted_query}"
+    # Validate safesearch parameter
+    valid_safesearch = ["on", "moderate", "off"]
+    if safesearch not in valid_safesearch:
+        logger.warning(f"Invalid safesearch value: '{safesearch}'. Using 'moderate' instead.")
+        safesearch = "moderate"
     
     try:
-        # Make the request with timeout
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()  # Raise exception for HTTP errors
+        # Using the DDGS class from duckduckgo_search package to perform the search
+        ddgs = DDGS(timeout=timeout)
         
-        # Parse the HTML
-        soup = BeautifulSoup(response.text, 'html.parser')
+        # Get search results - the text method returns results in the format we need
+        # See: https://github.com/deedy5/duckduckgo_search
+        results = ddgs.text(
+            keywords=query,
+            region=region,
+            safesearch=safesearch,
+            max_results=max_results,
+            backend="lite" if len(query) > 100 else "html"  # Use lite backend for long queries
+        )
         
-        # Extract search results
-        results = []
-        for result in soup.select('.result'):
-            # Extract title, URL, and snippet
-            title_element = result.select_one('.result__title')
-            url_element = result.select_one('.result__url')
-            snippet_element = result.select_one('.result__snippet')
+        # Transform the results to the expected format
+        formatted_results = []
+        for result in results:
+            formatted_results.append({
+                'title': result.get('title', ''),
+                'url': result.get('href', ''),  # duckduckgo-search uses 'href' for the URL
+                'snippet': result.get('body', '')  # duckduckgo-search uses 'body' for snippets
+            })
             
-            if title_element and url_element and snippet_element:
-                title = title_element.get_text(strip=True)
-                url = url_element.get_text(strip=True)
-                
-                # If the URL doesn't start with http, add it
-                if not url.startswith(('http://', 'https://')):
-                    url = f"https://{url}"
-                    
-                snippet = snippet_element.get_text(strip=True)
-                
-                results.append({
-                    'title': title,
-                    'url': url,
-                    'snippet': snippet
-                })
-                
-                if len(results) >= max_results:
-                    break
-        
-        return results
+        return formatted_results
     
-    except requests.exceptions.Timeout:
-        print(f"Error: Request timed out when accessing {url}")
-        return []
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP Error: {e}")
-        return []
-    except requests.exceptions.ConnectionError as e:
-        print(f"Connection Error: {e}")
-        return []
-    except requests.exceptions.RequestException as e:
-        print(f"Request Exception: {e}")
+    except DuckDuckGoSearchException as e:
+        # Handle specific exceptions from the duckduckgo-search library
+        logger.error(f"DuckDuckGo search error: {str(e)}")
+        # Try using the lite backend as a fallback
+        try:
+            if "backend" not in str(e).lower():
+                logger.info("Retrying with lite backend as fallback")
+                ddgs = DDGS(timeout=timeout)
+                results = ddgs.text(
+                    keywords=query,
+                    region=region,
+                    safesearch=safesearch,
+                    max_results=max_results,
+                    backend="lite"
+                )
+                
+                # Transform the results
+                formatted_results = []
+                for result in results:
+                    formatted_results.append({
+                        'title': result.get('title', ''),
+                        'url': result.get('href', ''),
+                        'snippet': result.get('body', '')
+                    })
+                return formatted_results
+        except Exception as inner_e:
+            logger.error(f"Fallback search failed: {str(inner_e)}")
         return []
     except Exception as e:
-        print(f"Error during search: {e}")
+        logger.error(f"Unexpected error during search: {str(e)}")
         return []
 
 @mcp.tool()
-def duckduckgo_search(query: str, max_results: int = 5) -> List[Dict[str, str]]:
+def duckduckgo_search(query: str, max_results: int = 5, 
+                      safesearch: str = "moderate") -> List[Dict[str, str]]:
     """
     Search the web using DuckDuckGo.
     
     Args:
         query: The search query
         max_results: Maximum number of search results to return (default: 5)
+        safesearch: Safe search setting ('on', 'moderate', 'off'; default: 'moderate')
         
     Returns:
         List of search results with title, URL, and snippet
@@ -125,48 +141,46 @@ def duckduckgo_search(query: str, max_results: int = 5) -> List[Dict[str, str]]:
     
     # Perform search
     try:
-        results = search_duckduckgo(query, max_results)
+        results = search_duckduckgo(query, max_results, safesearch)
         
         # Check if we got any results
         if not results:
-            print(f"Warning: No results found for query: '{query}'")
+            logger.warning(f"No results found for query: '{query}'")
             
         # Return results
         return results
     except Exception as e:
-        print(f"Error in duckduckgo_search: {str(e)}")
+        logger.error(f"Error in duckduckgo_search: {str(e)}")
         raise
 
-# Simple Args class for argument parsing
-class Args:
-    pass
-
-def parse_args():
-    """Parse command line arguments"""
-    # Check for --cli mode
-    if len(sys.argv) > 1 and sys.argv[1] == "--cli":
-        if len(sys.argv) < 3:
-            print("Usage: python duckduckgo_search.py --cli <query> [max_results]")
-            sys.exit(1)
-            
-        args = Args()
-        args.cli_mode = True
-        args.query = sys.argv[2]
-        args.max_results = int(sys.argv[3]) if len(sys.argv) > 3 else 5
-        return args
+def main():
+    """Main function for CLI usage"""
+    parser = argparse.ArgumentParser(description="Search DuckDuckGo from the command line")
+    parser.add_argument("query", help="The search query", nargs='+')
+    parser.add_argument("--max-results", "-n", type=int, default=5, 
+                        help="Maximum number of results (default: 5)")
+    parser.add_argument("--safesearch", choices=["on", "moderate", "off"], 
+                        default="moderate", help="Safe search setting (default: moderate)")
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     
-    # Standard mode (just run the MCP server)
-    args = Args()
-    args.cli_mode = False
-    return args
+    args = parser.parse_args()
+    
+    # Set debug logging if requested
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+        
+    # Join query arguments to handle quotes properly
+    query = " ".join(args.query)
+    
+    # Perform search
+    results = search_duckduckgo(
+        query=query,
+        max_results=args.max_results,
+        safesearch=args.safesearch
+    )
+    
+    # Output results as JSON
+    print(json.dumps(results, indent=2, ensure_ascii=False))
 
 if __name__ == "__main__":
-    args = parse_args()
-    
-    # Handle CLI mode
-    if args.cli_mode:
-        results = search_duckduckgo(args.query, args.max_results)
-        print(json.dumps(results, indent=2))
-    else:
-        # Run the MCP server using stdio (default transport)
-        mcp.run()
+    main()
