@@ -46,8 +46,6 @@ dev = [
 [project.scripts]
 duckduckgo-mcp = "duckduckgo_mcp.cli:main"
 
-
-
 [project.urls]
 Homepage = "https://github.com/CyranoB/duckduckgo-mcp"
 Repository = "https://github.com/CyranoB/duckduckgo-mcp"
@@ -63,12 +61,3 @@ include = ["duckduckgo_mcp", "duckduckgo_mcp.*"]
 version_scheme = "post-release"
 local_scheme = "node-and-date"
 write_to = "src/duckduckgo_mcp/_version.py"
-
-[metadata]
-license = "MIT"
-author = "Eddie Pick"
-author_email = "eddie@pick.fr"
-description = "DuckDuckGo search tool for MCP (Model Context Protocol)"
-long_description = "file: README.md"
-long_description_content_type = "text/markdown"
-app = "asgi:app"
