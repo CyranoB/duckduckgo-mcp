@@ -3,8 +3,9 @@
 [![PyPI](https://img.shields.io/pypi/v/duckduckgo-mcp?style=flat-square)](https://pypi.org/project/duckduckgo-mcp/)
 [![Python Version](https://img.shields.io/pypi/pyversions/duckduckgo-mcp?style=flat-square)](https://pypi.org/project/duckduckgo-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Downloads](https://static.pepy.tech/badge/duckduckgo-mcp/month)](https://pepy.tech/project/duckduckgo-mcp)
 
-A Model Context Protocol (MCP) server that allows searching the web using DuckDuckGo.
+A Model Context Protocol (MCP) server that allows searching the web using DuckDuckGo. This package provides an easy way to integrate DuckDuckGo search functionality into your Python applications and LLM workflows.
 
 ## Features
 
@@ -15,103 +16,109 @@ A Model Context Protocol (MCP) server that allows searching the web using DuckDu
 
 ## Installation
 
-### From PyPI (recommended)
-
-```bash
-uv pip install duckduckgo-mcp
-```
-
-### From source
-
-1. Clone this repository
-2. Install with uv:
-
-```bash
-# Basic installation
-uv pip install -e .
-
-# With uvx support
-uv pip install -e ".[uvx]"
-
-# With uvicorn support
-uv pip install -e ".[uvicorn]"
-```
-
-## Development
-
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.8 or higher
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
 
-### Setting up development environment
+### Install from PyPI (recommended)
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/CyranoB/duckduckgo-mcp.git
-   cd duckduckgo-mcp
-   ```
+```bash
+# Using uv (recommended)
+uv pip install duckduckgo-mcp
 
-2. Create and activate a virtual environment:
-   ```bash
-   uv venv
-   source .venv/bin/activate  # On Unix/macOS
-   # Or on Windows: .venv\Scripts\activate
-   ```
+# Or using pip
+pip install duckduckgo-mcp
+```
 
-3. Install development dependencies:
-   ```bash
-   uv pip install -e ".[dev]"
-   ```
+### Install with UVX (for Claude Desktop)
+
+```bash
+# Install UVX if you haven't already
+pip install uvx
+
+# Install the DuckDuckGo MCP package
+uvx install duckduckgo-mcp
+```
+
+### Install from source
+
+For development or to get the latest changes:
+
+```bash
+# Clone the repository
+git clone https://github.com/CyranoB/duckduckgo-mcp.git
+cd duckduckgo-mcp
+
+# Install with uv (recommended)
+uv pip install -e .
+
+# Or with pip
+pip install -e .
+```
 
 ## Usage
 
-### Running the MCP Server
-
-#### Option 1: STDIO Transport (Default)
+### Starting the Server (STDIO Mode)
 
 ```bash
-# Using the mcp CLI tool
-python -m mcp run duckduckgo_search.py
+# Start the server in STDIO mode (for use with MCP clients like Claude)
+duckduckgo-mcp serve
 
-# Or run the script directly
-python duckduckgo_search.py
+# Enable debug logging
+duckduckgo-mcp serve --debug
 ```
 
-The STDIO transport protocol is ideal for integrations with LLMs and other tools that communicate over standard input/output.
-
-#### Option 2: Using uvx (or other ASGI servers)
-
-```bash
-# Install required dependencies
-uv pip install -e ".[uvx]"  # or ".[uvicorn]" for uvicorn
-
-# Run with uvx
-uvx
-
-# Or run with uvicorn
-uvicorn asgi:app
-```
-
-This starts the server with a HTTP transport, making it accessible via web requests.
-
-### Command Line Testing
+### Testing the Search Tool
 
 You can test the search functionality directly from the command line:
 
 ```bash
-python duckduckgo_search.py --cli "your search query" [max_results]
+# Search DuckDuckGo
+duckduckgo-mcp search "your search query" --max-results 5
 ```
-
-This will output the search results as JSON directly to your terminal.
 
 ### Integration with LLM Tools
 
-This MCP server can be used with any LLM tool that supports the Model Context Protocol over the STDIO transport:
+This MCP server is designed to work with any LLM tool that supports the Model Context Protocol (MCP).
 
-```bash
-# Example using Claude Code
-claude code --mcp duckduckgo_search.py
+#### Using with Claude
+
+1. Install the package using one of the methods above
+
+2. Use it with Claude:
+   ```bash
+   claude code --mcp duckduckgo-mcp
+   ```
+   
+   Or with the full path:
+   ```bash
+   claude code --mcp $(which duckduckgo-mcp)
+   ```
+
+#### MCP Integration
+
+When using with an MCP client (like Claude), the server exposes a single tool:
+
+```python
+@mcp.tool()
+def search(query: str, max_results: int = 5) -> list:
+    """Search DuckDuckGo for the given query.
+    
+    Args:
+        query: The search query string
+        max_results: Maximum number of results to return (default: 5)
+        
+    Returns:
+        List of search results with title, url, and snippet for each result
+    """
+```
+
+Example usage in an MCP client:
+
+```python
+# This is handled automatically by the MCP client
+results = search("Python programming", max_results=3)
 ```
 
 ## Contributing
@@ -155,6 +162,20 @@ The MCP server exposes a single tool:
 }
 ```
 
+## Contributing
+
+Contributions are welcome! Here's how you can contribute:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
 ## Support
 
 If you encounter any issues or have questions, please [open an issue](https://github.com/CyranoB/duckduckgo-mcp/issues).
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

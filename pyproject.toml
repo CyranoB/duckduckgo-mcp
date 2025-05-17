@@ -43,6 +43,9 @@ dev = [
     "pytest-cov>=4.0.0"
 ]
 
+[project.scripts]
+duckduckgo-mcp = "duckduckgo_mcp.cli:main"
+
 
 
 [project.urls]

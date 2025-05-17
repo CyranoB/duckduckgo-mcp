@@ -1,0 +1,55 @@
+[tool.uvx]
+name = "duckduckgo-mcp"
+description = "DuckDuckGo MCP Server for web search"
+version = "0.1.0"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "duckduckgo-mcp"
+description = "DuckDuckGo MCP Server for web search"
+version = "0.1.0"
+authors = [
+    { name = "Eddie Pick", email = "eddie@pick.fr" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "mcp>=1.9.0",
+    "fastmcp>=2.3.4",
+    "requests>=2.28.0",
+    "beautifulsoup4>=4.11.0",
+    "uvicorn>=0.15.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
+    "pytest-cov>=4.0.0"
+]
+
+[project.scripts]
+duckduckgo-mcp = "duckduckgo_mcp.cli:main"
+
+[tool.uvx.metadata]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+]
+
+[tool.uvx.tool.uvx]
+entry_point = "duckduckgo_mcp.cli:main"
