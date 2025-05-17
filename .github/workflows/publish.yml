@@ -45,9 +45,23 @@ jobs:
       - name: Generate dynamic version
         run: |
           uv pip install setuptools_scm
-          dynamic_version=$(python -c "from setuptools_scm import get_version; print(get_version())")
-          echo "Detected version: $dynamic_version"
-          echo "VERSION=$dynamic_version" >> $GITHUB_ENV
+          
+          # Get version from setuptools_scm
+          scm_version=$(python -c "from setuptools_scm import get_version; print(get_version())")
+          echo "SCM detected version: $scm_version"
+          
+          # Extract version from tag if this is a release event
+          if [[ "${{ github.event_name }}" == "release" && -n "${{ github.event.release.tag_name }}" ]]; then
+            # Remove 'v' prefix if present
+            tag_version="${{ github.event.release.tag_name }}"
+            tag_version="${tag_version#v}"
+            echo "Using tag-based version: $tag_version"
+            echo "VERSION=$tag_version" >> $GITHUB_ENV
+          else
+            # Use setuptools_scm version if not a tagged release
+            echo "Using SCM-based version: $scm_version"
+            echo "VERSION=$scm_version" >> $GITHUB_ENV
+          fi
 
       - name: Check if version exists on PyPI
         run: |
@@ -58,8 +72,23 @@ jobs:
             exit 1
           fi
 
-      - name: Build package
+      - name: Prepare build with correct version
         run: |
+          # Create an environment variable with version override if needed
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            # For release events, we'll override setuptools_scm with the exact tag version
+            export SETUPTOOLS_SCM_PRETEND_VERSION="${VERSION}"
+            echo "Setting SETUPTOOLS_SCM_PRETEND_VERSION=${VERSION}"
+          fi
+          
+          # Store this in the environment for subsequent steps
+          echo "SETUPTOOLS_SCM_PRETEND_VERSION=${SETUPTOOLS_SCM_PRETEND_VERSION}" >> $GITHUB_ENV
+          
+      - name: Build package
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ env.SETUPTOOLS_SCM_PRETEND_VERSION }}
+        run: |
+          echo "Building with version override: $SETUPTOOLS_SCM_PRETEND_VERSION"
           python -m build
 
       - name: Publish to PyPI
