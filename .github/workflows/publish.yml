@@ -40,8 +40,10 @@ jobs:
 
       - name: Check if version exists on PyPI
         run: |
-          if curl -sSfL "https://pypi.org/project/duckduckgo-mcp/${{ env.VERSION }}/" > /dev/null; then
-            echo "Version ${{ env.VERSION }} already exists on PyPI. Skipping upload."
+          VERSION=${{ env.VERSION }}
+          if curl -sSfL "https://pypi.org/pypi/duckduckgo-mcp/json" | \
+             python3 -c "import sys, json; d=json.load(sys.stdin); print(any(d['releases'].get('$VERSION', [])))" | grep -q "True"; then
+            echo "Version $VERSION already exists on PyPI with files. Skipping upload."
             exit 1
           fi
 
