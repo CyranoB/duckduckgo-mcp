@@ -4,9 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a DuckDuckGo Model Context Protocol (MCP) server that allows searching the web using DuckDuckGo. The server implements the MCP protocol, enabling LLMs to perform web searches through a standardized interface.
+This is a DuckDuckGo Model Context Protocol (MCP) server that provides two main capabilities:
+1. Searching the web using DuckDuckGo
+2. Fetching and converting web content to markdown using Jina Reader
 
-The implementation uses the FastMCP library to create an MCP server that communicates via STDIO or HTTP transport in a clean, Pythonic way.
+The server implements the MCP protocol, enabling LLMs to perform web searches and retrieve content through a standardized interface.
+
+The implementation uses the FastMCP library to create an MCP server that communicates via STDIO transport in a clean, Pythonic way.
 
 ## Commands
 
@@ -16,9 +20,6 @@ The implementation uses the FastMCP library to create an MCP server that communi
 # Install dependencies for development
 uv pip install -e .
 
-# With uvx support
-uv pip install -e ".[uvx]"
-
 # With development tools
 uv pip install -e ".[dev]"
 ```
@@ -26,24 +27,27 @@ uv pip install -e ".[dev]"
 ### Running the MCP Server
 
 ```bash
-# Run the MCP server with the CLI (preferred method)
+# Run the MCP server with the CLI
 duckduckgo-mcp serve
 
 # Run with debug logging
 duckduckgo-mcp serve --debug
 
-# Run with UVX (HTTP transport)
-uvx
-
 # Add to Claude Code
-claude mcp add duckduckgo -- uvx --python=3.10 duckduckgo-mcp serve
+claude mcp add duckduckgo -- duckduckgo-mcp serve
 ```
 
 ### Testing
 
 ```bash
 # Test the search functionality from the command line
-duckduckgo-mcp search "your search query" --max-results 5
+duckduckgo-mcp search "your search query" --max-results 5 --safesearch moderate
+
+# Test the URL fetching functionality from the command line
+duckduckgo-mcp fetch "https://example.com" --format markdown --with-images
+
+# Get a URL in JSON format
+duckduckgo-mcp fetch "https://example.com" --format json
 
 # Display version information
 duckduckgo-mcp version
@@ -70,50 +74,76 @@ pytest --cov=duckduckgo_mcp
 
 ## Architecture
 
-The project has a simple architecture:
+The project has a modular architecture:
 
-1. **CLI Entry Point**: `cli.py` provides the command-line interface with subcommands for serving, searching, and displaying version information.
+1. **CLI Entry Point**: `cli.py` provides the command-line interface with subcommands for serving, searching, fetching URLs, and displaying version information.
 
 2. **Search Implementation**: `duckduckgo_search.py` contains:
-   - `search_duckduckgo()`: Core function that formats queries, makes HTTP requests to DuckDuckGo's HTML interface, parses results using BeautifulSoup, and returns structured data
+   - `search_duckduckgo()`: Core function that uses the duckduckgo-search library to query DuckDuckGo and return structured results
    - `duckduckgo_search()`: MCP-decorated wrapper function that adds validation and error handling
 
-3. **MCP Tool Registration**: The `@mcp.tool()` decorator registers the search function as an MCP tool, making it available to LLMs through the MCP protocol.
+3. **URL Fetch Implementation**: `jina_fetch.py` contains:
+   - `fetch_url()`: Core function that uses the Jina Reader API to fetch and convert web content to markdown or JSON
+   - `jina_fetch()`: MCP-decorated wrapper function that adds validation and error handling
 
-4. **Multiple Operation Modes**:
+4. **MCP Tool Registration**: The `@mcp.tool()` decorator registers both functions as MCP tools, making them available to LLMs through the MCP protocol.
+
+5. **Multiple Operation Modes**:
    - STDIO mode via `duckduckgo-mcp serve` (default transport)
-   - HTTP mode via `uvx` (requires [uvx] extra dependencies)
-   - CLI testing mode via `duckduckgo-mcp search` command
+   - CLI testing modes via `duckduckgo-mcp search` and `duckduckgo-mcp fetch` commands
 
-5. **Error Handling**:
-   - Parameter validation for query and max_results
+6. **Error Handling**:
+   - Parameter validation for all inputs
    - Specific exception handling for HTTP requests
-   - Graceful error responses
+   - Graceful error responses with meaningful messages
 
 ## File Structure
 
 - `cli.py`: Command-line interface implementation
-- `duckduckgo_search.py`: Core search functionality
+- `duckduckgo_search.py`: Search functionality using DuckDuckGo
+- `jina_fetch.py`: URL fetching functionality using Jina Reader
 - `__init__.py`: Package exports and version information
 - `__main__.py`: Entry point for running as a module
-- `asgi.py`: ASGI application for HTTP transport (uvx/uvicorn)
 - `_version.py`: Generated version information (from setuptools_scm)
 
 ## API
 
-The MCP server exposes a single tool:
+The MCP server exposes two tools:
+
+### Tool 1: Search
 
 - **Tool Name**: `duckduckgo_search` (or `search` when using the CLI entry point)
 - **Description**: Search the web using DuckDuckGo
 
-### Parameters
+#### Parameters
 
 - `query` (string, required): The search query
 - `max_results` (integer, optional, default: 5): Maximum number of search results to return
+- `safesearch` (string, optional, default: "moderate"): Safe search setting ("on", "moderate", or "off")
 
-### Response
+#### Response
 
 A list of dictionaries containing search results with:
 - `title`: Result title
 - `url`: Result URL
 - `snippet`: Text snippet from the search result
+
+### Tool 2: URL Fetch
+
+- **Tool Name**: `jina_fetch`
+- **Description**: Fetch a URL and convert it to markdown or JSON using Jina Reader
+
+#### Parameters
+
+- `url` (string, required): The URL to fetch and convert
+- `format` (string, optional, default: "markdown"): Output format - "markdown" or "json"
+- `max_length` (integer, optional): Maximum content length to return (None for no limit)
+- `with_images` (boolean, optional, default: false): Whether to include image alt text generation
+
+#### Response
+
+For markdown format: A string containing the markdown content
+For JSON format: A dictionary with the following structure:
+- `url`: The fetched URL
+- `title`: Page title
+- `content`: Page content in markdown format

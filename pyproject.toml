@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "duckduckgo-mcp"
 dynamic = ["version"]
-description = "DuckDuckGo search tool for MCP (Model Context Protocol)"
+description = "DuckDuckGo search and content retrieval tool for MCP (Model Context Protocol)"
 readme = "README.md"
 authors = [
     {name = "Eddie Pick", email = "eddie@pick.fr"}
@@ -35,8 +35,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-uvx = ["uvx>=0.1.0"]
-uvicorn = ["uvicorn>=0.15.0"]
 dev = [
     "pytest>=7.0.0",
     "black>=23.0.0",
@@ -53,7 +51,6 @@ Homepage = "https://github.com/CyranoB/duckduckgo-mcp"
 Repository = "https://github.com/CyranoB/duckduckgo-mcp"
 Issues = "https://github.com/CyranoB/duckduckgo-mcp/issues"
 
-[tool.uvx]
 
 [tool.setuptools.packages.find]
 where = ["src"]
