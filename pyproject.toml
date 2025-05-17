@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "duckduckgo-mcp"
+version = "0.1.0"
+description = "DuckDuckGo search tool for MCP"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "mcp>=1.9.0",
+    "fastmcp>=2.3.4",
+    "requests>=2.28.0",
+    "beautifulsoup4>=4.11.0",
+]
+
+[project.optional-dependencies]
+uvx = ["uvx>=0.1.0"]
+uvicorn = ["uvicorn>=0.15.0"]
+
+[tool.uvx]
+app = "asgi:app"

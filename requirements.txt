@@ -1,0 +1,4 @@
+mcp>=1.9.0
+fastmcp>=2.3.4
+requests>=2.28.0
+beautifulsoup4>=4.11.0
