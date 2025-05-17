@@ -69,9 +69,12 @@ def main() -> int:
         logging.info("Starting DuckDuckGo MCP Server (STDIO transport)")
         logging.info("Press Ctrl+C to stop the server")
         
+        # Print version information first
+        from . import __version__
+        logging.info(f"DuckDuckGo MCP Server v{__version__}")
+        
         # Start the MCP server with STDIO transport
         mcp.run(transport="stdio")
-        print(f"DuckDuckGo MCP Server v{__version__}")
         return 0
     
     return 0

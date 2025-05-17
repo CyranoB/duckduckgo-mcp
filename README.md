@@ -18,7 +18,7 @@ A Model Context Protocol (MCP) server that allows searching the web using DuckDu
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
 
 ### Install from PyPI (recommended)
@@ -82,11 +82,11 @@ duckduckgo-mcp search "your search query" --max-results 5
 
 This MCP server is designed to work with any LLM tool that supports the Model Context Protocol (MCP).
 
-#### Using with Claude
+#### Using with Claude CLI
 
 1. Install the package using one of the methods above
 
-2. Use it with Claude:
+2. Use it with Claude CLI:
    ```bash
    claude code --mcp duckduckgo-mcp
    ```
@@ -95,6 +95,36 @@ This MCP server is designed to work with any LLM tool that supports the Model Co
    ```bash
    claude code --mcp $(which duckduckgo-mcp)
    ```
+
+#### Using with Claude Desktop
+
+1. Install the package with UVX as described above
+
+2. Add it to Claude Desktop (recommended method):
+   ```bash
+   claude mcp add duckduckgo -- uvx --python=3.10 duckduckgo-mcp serve
+   ```
+
+3. Alternatively, manually edit the Claude Desktop configuration file:
+   
+   The configuration file is located at:
+   - macOS: `~/.claude/claude_desktop_config.json` 
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+   - Linux: `~/.config/Claude/claude_desktop_config.json`
+
+   Add the following to your configuration file:
+   ```json
+   {
+     "mcpServers": {
+       "duckduckgo": {
+         "command": "uvx",
+         "args": ["--python=3.10", "duckduckgo-mcp", "serve"]
+       }
+     }
+   }
+   ```
+
+4. Start a new session in Claude Desktop and select the DuckDuckGo tool from available MCPs
 
 #### MCP Integration
 
