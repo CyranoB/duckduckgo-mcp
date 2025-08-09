@@ -3,15 +3,16 @@
 DuckDuckGo Search MCP Tool
 
 This tool allows searching the web using DuckDuckGo through the MCP (Model Context Protocol) framework.
-It integrates with the duckduckgo_search library to provide reliable search results.
+It integrates with the ddgs library to provide reliable search results.
 """
 
 import json
 import logging
 import argparse
-from typing import Dict, List, Optional
-from duckduckgo_search import DDGS
-from duckduckgo_search.exceptions import DuckDuckGoSearchException
+from typing import Dict, List
+
+from ddgs import DDGS
+from ddgs.exceptions import DDGSException
 
 from .server import mcp
 
@@ -22,14 +23,18 @@ def _format_search_result(result: Dict) -> Dict[str, str]:
     """Transform a raw DuckDuckGo result to the standard format."""
     return {
         'title': result.get('title', ''),
-        'url': result.get('href', ''),  # duckduckgo-search uses 'href' for the URL
-        'snippet': result.get('body', '')  # duckduckgo-search uses 'body' for snippets
+        'url': result.get('href', ''),
+        'snippet': result.get('body', '')
     }
 
 
 def _select_backend(query: str) -> str:
-    """Select the appropriate backend based on query length."""
-    return "lite" if len(query) > 100 else "html"
+    """Select the appropriate backend for the search.
+
+    Available backends: brave, duckduckgo, google, grokipedia, mojeek, wikipedia, yahoo, yandex
+    Using 'duckduckgo' as default for consistency with the tool's purpose.
+    """
+    return "duckduckgo"
 
 
 def _execute_search(
@@ -56,7 +61,7 @@ def _execute_search(
     """
     ddgs = DDGS(timeout=timeout)
     results = ddgs.text(
-        keywords=query,
+        query=query,
         region=region,
         safesearch=safesearch,
         max_results=max_results,
@@ -74,7 +79,7 @@ def _try_fallback_search(
     original_error: Exception
 ) -> List[Dict[str, str]]:
     """
-    Attempt a fallback search using the lite backend.
+    Attempt a fallback search using the brave backend.
 
     Args:
         query: Search query string
@@ -91,9 +96,9 @@ def _try_fallback_search(
     if "backend" in str(original_error).lower():
         return []
 
-    logger.info("Retrying with lite backend as fallback")
+    logger.info("Retrying with brave backend as fallback")
     try:
-        return _execute_search(query, region, safesearch, max_results, timeout, "lite")
+        return _execute_search(query, region, safesearch, max_results, timeout, "brave")
     except Exception as e:
         logger.error(f"Fallback search failed: {str(e)}")
         return []
@@ -136,7 +141,7 @@ def search_duckduckgo(
     timeout: int = 15
 ) -> List[Dict[str, str]]:
     """
-    Search DuckDuckGo using the duckduckgo_search library and return parsed results.
+    Search DuckDuckGo using the ddgs library and return parsed results.
 
     Args:
         query: The search query string
@@ -153,7 +158,7 @@ def search_duckduckgo(
 
     try:
         return _execute_search(query, region, safesearch, max_results, timeout, backend)
-    except DuckDuckGoSearchException as e:
+    except DDGSException as e:
         logger.error(f"DuckDuckGo search error: {str(e)}")
         return _try_fallback_search(query, region, safesearch, max_results, timeout, e)
     except Exception as e:

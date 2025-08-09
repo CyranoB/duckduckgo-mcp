@@ -28,10 +28,10 @@ def _handle_version(args: argparse.Namespace) -> int:
     print(f"Platform: {platform.platform()}")
 
     try:
-        from duckduckgo_search import __version__ as ddgs_version
-        print(f"duckduckgo_search version: {ddgs_version}")
+        from ddgs import __version__ as ddgs_version
+        print(f"ddgs version: {ddgs_version}")
     except ImportError:
-        print("duckduckgo_search: not available")
+        print("ddgs: not available")
 
     return 0
 
