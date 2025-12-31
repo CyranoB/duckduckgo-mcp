@@ -5,14 +5,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Downloads](https://static.pepy.tech/badge/duckduckgo-mcp/month)](https://pepy.tech/project/duckduckgo-mcp)
 
-A Model Context Protocol (MCP) server that allows searching the web using DuckDuckGo. This package provides an easy way to integrate DuckDuckGo search functionality into your Python applications and LLM workflows.
+A Model Context Protocol (MCP) server that provides two capabilities:
+1) Search the web using DuckDuckGo
+2) Fetch and convert web content using Jina Reader
 
 ## Features
 
-- Search the web using DuckDuckGo
-- Return structured results with titles, URLs, and snippets
-- Configurable number of results
-- Implemented using FastMCP library with STDIO transport
+- DuckDuckGo web search with safe search controls
+- Fetch and convert URLs to markdown or JSON
+- CLI for search, fetch, serve, and version commands
+- MCP tools for LLM integration
 
 ## Installation
 
@@ -71,126 +73,211 @@ duckduckgo-mcp serve --debug
 
 ### Testing the Search Tool
 
-You can test the search functionality directly from the command line:
-
 ```bash
 # Search DuckDuckGo
-duckduckgo-mcp search "your search query" --max-results 5
+duckduckgo-mcp search "your search query" --max-results 5 --safesearch moderate
 ```
 
-### Integration with LLM Tools
+### Testing the Fetch Tool
 
-This MCP server is designed to work with any LLM tool that supports the Model Context Protocol (MCP).
+```bash
+# Fetch a URL and return markdown
+duckduckgo-mcp fetch "https://example.com" --format markdown
 
-#### Using with Claude CLI
+# Fetch a URL and return JSON
+duckduckgo-mcp fetch "https://example.com" --format json
 
-1. Install the package using one of the methods above
+# Limit output length
 
-2. Use it with Claude CLI:
-   ```bash
-   claude code --mcp duckduckgo-mcp
-   ```
-   
-   Or with the full path:
-   ```bash
-   claude code --mcp $(which duckduckgo-mcp)
-   ```
+duckduckgo-mcp fetch "https://example.com" --max-length 2000
 
-#### Using with Claude Desktop
+# Include generated image alt text
+duckduckgo-mcp fetch "https://example.com" --with-images
+```
 
-1. Install the package with UVX as described above
+### Version Information
 
-2. Add it to Claude Desktop (recommended method):
-   ```bash
-   claude mcp add duckduckgo -- uvx --python=3.10 duckduckgo-mcp serve
-   ```
+```bash
+# Show version
+duckduckgo-mcp version
 
-3. Alternatively, manually edit the Claude Desktop configuration file:
-   
-   The configuration file is located at:
-   - macOS: `~/.claude/claude_desktop_config.json` 
+# Show detailed version info
+duckduckgo-mcp version --debug
+```
+
+## MCP Client Setup
+
+This MCP server works with any MCP-compatible client. Use one of the setups below.
+
+Python 3.10-3.13 is supported (3.14 not yet). Use `--python ">=3.10,<3.14"` with `uvx` to enforce. Verified with Python 3.12 and 3.13.
+
+### Claude Desktop
+
+1. Open Claude Desktop > Settings > Developer > Edit Config.
+2. Edit the config file:
+   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-   - Linux: `~/.config/Claude/claude_desktop_config.json`
-
-   Add the following to your configuration file:
+3. Add the server config under `mcpServers`:
    ```json
-   {
-     "mcpServers": {
-       "duckduckgo": {
-         "command": "uvx",
-         "args": ["--python=3.10", "duckduckgo-mcp", "serve"]
-       }
-     }
-   }
+    {
+      "mcpServers": {
+        "duckduckgo": {
+          "command": "uvx",
+          "args": ["--python", ">=3.10,<3.14", "duckduckgo-mcp", "serve"]
+        }
+      }
+    }
+
    ```
+4. Restart Claude Desktop.
 
-4. Start a new session in Claude Desktop and select the DuckDuckGo tool from available MCPs
+### Claude Code
 
-#### MCP Integration
+Add a local stdio server:
 
-When using with an MCP client (like Claude), the server exposes a single tool:
+```bash
+claude mcp add --transport stdio duckduckgo -- uvx --python ">=3.10,<3.14" duckduckgo-mcp serve
+```
+
+Optional: `claude mcp list` to verify, or `claude mcp add-from-claude-desktop` to import.
+
+### Codex (CLI + IDE)
+
+Add via CLI:
+
+```bash
+codex mcp add duckduckgo -- uvx --python ">=3.10,<3.14" duckduckgo-mcp serve
+```
+
+Or configure `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.duckduckgo]
+command = "uvx"
+args = ["--python", ">=3.10,<3.14", "duckduckgo-mcp", "serve"]
+```
+
+### OpenCode
+
+Add to your OpenCode config (`~/.config/opencode/opencode.json` or project `opencode.json`):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "duckduckgo": {
+      "type": "local",
+      "command": ["uvx", "--python", ">=3.10,<3.14", "duckduckgo-mcp", "serve"],
+      "enabled": true
+    }
+  }
+}
+```
+
+Or run `opencode mcp add` and follow the prompts.
+
+### Cursor
+
+Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
+
+```json
+{
+  "mcpServers": {
+    "duckduckgo": {
+      "command": "uvx",
+      "args": ["--python", ">=3.10,<3.14", "duckduckgo-mcp", "serve"]
+    }
+  }
+}
+```
+
+Verify with:
+
+```bash
+cursor-agent mcp list
+```
+
+## MCP Tools
+
+The server exposes these tools to MCP clients:
 
 ```python
 @mcp.tool()
-def search(query: str, max_results: int = 5) -> list:
-    """Search DuckDuckGo for the given query.
-    
-    Args:
-        query: The search query string
-        max_results: Maximum number of results to return (default: 5)
-        
-    Returns:
-        List of search results with title, url, and snippet for each result
-    """
+def duckduckgo_search(query: str, max_results: int = 5, safesearch: str = "moderate") -> list:
+    """Search DuckDuckGo for the given query."""
+```
+
+```python
+@mcp.tool()
+def jina_fetch(url: str, format: str = "markdown", max_length: int | None = None, with_images: bool = False) -> str | dict:
+    """Fetch a URL and convert it using Jina Reader."""
 ```
 
 Example usage in an MCP client:
 
 ```python
 # This is handled automatically by the MCP client
-results = search("Python programming", max_results=3)
+results = duckduckgo_search("Python programming", max_results=3)
+content = jina_fetch("https://example.com", format="markdown")
 ```
-
-## Contributing
-
-Contributions are welcome! Here's how you can contribute:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## API
 
-The MCP server exposes a single tool:
+### Tool 1: Search
 
 - **Tool Name**: `duckduckgo_search`
-- **Description**: Search the web using DuckDuckGo
+- **Description**: Search the web using DuckDuckGo (powered by the `ddgs` library)
 
-### Parameters
+#### Parameters
 
 - `query` (string, required): The search query
 - `max_results` (integer, optional, default: 5): Maximum number of search results to return
+- `safesearch` (string, optional, default: "moderate"): Safe search setting ("on", "moderate", or "off")
 
-### Response
+#### Response
+
+A list of dictionaries:
+
+```json
+[
+  {
+    "title": "Result title",
+    "url": "https://example.com",
+    "snippet": "Text snippet from the search result"
+  }
+]
+```
+
+### Tool 2: Fetch
+
+- **Tool Name**: `jina_fetch`
+- **Description**: Fetch a URL and convert it to markdown or JSON using Jina Reader
+
+#### Parameters
+
+- `url` (string, required): The URL to fetch and convert
+- `format` (string, optional, default: "markdown"): Output format ("markdown" or "json")
+- `max_length` (integer, optional): Maximum content length to return (None for no limit)
+- `with_images` (boolean, optional, default: false): Whether to include image alt text generation
+
+#### Response
+
+For markdown format: a string containing markdown content
+
+For JSON format: a dictionary with the structure:
 
 ```json
 {
-  "results": [
-    {
-      "title": "Result title",
-      "url": "https://example.com",
-      "snippet": "Text snippet from the search result"
-    },
-    ...
-  ]
+  "url": "https://example.com",
+  "title": "Page title",
+  "content": "Markdown content"
 }
 ```
+
+## Notes
+
+- Search uses the `ddgs` package (renamed from `duckduckgo-search`).
+- Fetch uses the Jina Reader API at `https://r.jina.ai/`.
 
 ## Contributing
 
