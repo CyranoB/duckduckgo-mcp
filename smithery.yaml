@@ -1,5 +1,22 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
 
+name: duckduckgo-mcp
+displayName: DuckDuckGo MCP Server
+description: Search the web using DuckDuckGo and fetch/convert web content using Jina Reader. Privacy-focused search with no API key required.
+visibility: public
+type: mcp
+author:
+  name: Eddie Pick
+  url: https://github.com/CyranoB
+repository: https://github.com/CyranoB/duckduckgo-mcp
+keywords:
+  - search
+  - duckduckgo
+  - web
+  - fetch
+  - jina
+  - privacy
+
 build:
   dockerBuildPath: .
 
