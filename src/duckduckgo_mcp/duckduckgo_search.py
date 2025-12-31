@@ -148,7 +148,7 @@ def search_duckduckgo(
 
     try:
         return _execute_search(
-            query, region, safesearch, max_results, timeout, "auto"
+            query, region, safesearch, max_results, timeout, "duckduckgo"
         )
     except DDGSException as e:
         logger.error(f"DuckDuckGo search error: {str(e)}")
