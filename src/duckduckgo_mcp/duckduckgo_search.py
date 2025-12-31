@@ -7,7 +7,7 @@ It integrates with the ddgs library to provide reliable search results.
 """
 
 import logging
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from ddgs import DDGS
 from ddgs.exceptions import DDGSException
@@ -24,6 +24,35 @@ def _format_search_result(result: Dict) -> Dict[str, str]:
         "url": result.get("href", ""),
         "snippet": result.get("body", ""),
     }
+
+
+def _format_results_as_text(results: List[Dict[str, str]], query: str) -> str:
+    """
+    Format search results as LLM-friendly natural language text.
+
+    Args:
+        results: List of search result dictionaries
+        query: The original search query (for context in error messages)
+
+    Returns:
+        Formatted string with numbered results
+    """
+    if not results:
+        return (
+            f"No results found for '{query}'. "
+            "This could be due to DuckDuckGo rate limiting, the query returning no matches, "
+            "or network issues. Try rephrasing your search or try again in a few minutes."
+        )
+
+    lines = [f"Found {len(results)} search results:\n"]
+
+    for position, result in enumerate(results, start=1):
+        lines.append(f"{position}. {result.get('title', 'No title')}")
+        lines.append(f"   URL: {result.get('url', 'No URL')}")
+        lines.append(f"   Summary: {result.get('snippet', 'No summary available')}")
+        lines.append("")  # Empty line between results
+
+    return "\n".join(lines)
 
 
 def _execute_search(
@@ -160,8 +189,11 @@ def search_duckduckgo(
 
 @mcp.tool()
 def duckduckgo_search(
-    query: str, max_results: int = 5, safesearch: str = "moderate"
-) -> List[Dict[str, str]]:
+    query: str,
+    max_results: int = 5,
+    safesearch: str = "moderate",
+    output_format: str = "json",
+) -> Union[List[Dict[str, str]], str]:
     """
     Search the web using DuckDuckGo.
 
@@ -169,9 +201,11 @@ def duckduckgo_search(
         query: The search query
         max_results: Maximum number of search results to return (default: 5)
         safesearch: Safe search setting ('on', 'moderate', 'off'; default: 'moderate')
+        output_format: Output format - 'json' returns list of dicts, 'text' returns
+                       LLM-friendly formatted string (default: 'json')
 
     Returns:
-        List of search results with title, URL, and snippet
+        List of search results (json) or formatted string (text)
     """
     # Type coercion for MCP clients that may pass strings
     if not isinstance(max_results, int):
@@ -180,9 +214,21 @@ def duckduckgo_search(
         except (ValueError, TypeError):
             raise ValueError("max_results must be a valid positive integer")
 
+    # Validate output_format
+    output_format = output_format.lower() if output_format else "json"
+    if output_format not in ("json", "text"):
+        logger.warning(
+            f"Invalid output_format: '{output_format}'. Using 'json' instead."
+        )
+        output_format = "json"
+
     results = search_duckduckgo(query, max_results, safesearch)
 
     if not results:
         logger.warning(f"No results found for query: '{query}'")
+
+    # Return based on output format
+    if output_format == "text":
+        return _format_results_as_text(results, query)
 
     return results

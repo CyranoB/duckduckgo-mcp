@@ -1,0 +1,26 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+build:
+  dockerBuildPath: .
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    properties:
+      debug:
+        type: boolean
+        description: Enable debug logging
+        default: false
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({
+      command: 'uvx',
+      args: config.debug
+        ? ['duckduckgo-mcp', 'serve', '--debug']
+        : ['duckduckgo-mcp', 'serve']
+    })
+  exampleConfig:
+    debug: false

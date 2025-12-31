@@ -8,9 +8,9 @@ import argparse
 import json
 import logging
 import sys
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Union
 
-from .duckduckgo_search import duckduckgo_search, search_duckduckgo
+from .duckduckgo_search import duckduckgo_search
 from .jina_fetch import fetch_url
 from .server import mcp
 
@@ -44,10 +44,18 @@ def _handle_search(args: argparse.Namespace) -> int:
     """Handle the search command."""
     try:
         query = " ".join(args.query)
-        results = search_duckduckgo(
-            query=query, max_results=args.max_results, safesearch=args.safesearch
+        output_format = getattr(args, "output_format", "json")
+        results = duckduckgo_search(
+            query=query,
+            max_results=args.max_results,
+            safesearch=args.safesearch,
+            output_format=output_format,
         )
-        print(json.dumps(results, indent=2, ensure_ascii=False))
+
+        if output_format == "text":
+            print(results)
+        else:
+            print(json.dumps(results, indent=2, ensure_ascii=False))
         return 0
     except Exception as e:
         logging.error(f"Search error: {str(e)}")
@@ -85,14 +93,18 @@ def _handle_serve(args: argparse.Namespace) -> int:
     # Some MCP clients may expect the shorter name. This simply delegates to the main tool.
     @mcp.tool()
     def search(
-        query: str, max_results: int = 5, safesearch: str = "moderate"
-    ) -> List[Dict[str, str]]:
+        query: str,
+        max_results: int = 5,
+        safesearch: str = "moderate",
+        output_format: str = "json",
+    ) -> Union[List[Dict[str, str]], str]:
         """Search DuckDuckGo for the given query."""
         logging.debug(
-            f"Searching for: {query} (max_results: {max_results}, safesearch: {safesearch})"
+            f"Searching for: {query} (max_results: {max_results}, safesearch: {safesearch}, output_format: {output_format})"
         )
-        results = duckduckgo_search(query, max_results, safesearch)
-        logging.debug(f"Found {len(results)} results")
+        results = duckduckgo_search(query, max_results, safesearch, output_format)
+        if isinstance(results, list):
+            logging.debug(f"Found {len(results)} results")
         return results
 
     try:
@@ -132,6 +144,13 @@ def _setup_parser() -> argparse.ArgumentParser:
         choices=["on", "moderate", "off"],
         default="moderate",
         help="Safe search setting (default: moderate)",
+    )
+    search_parser.add_argument(
+        "--output-format",
+        choices=["json", "text"],
+        default="json",
+        dest="output_format",
+        help="Output format: 'json' for structured data, 'text' for LLM-friendly (default: json)",
     )
 
     # Fetch command
