@@ -19,5 +19,9 @@ COPY src/ ./src/
 # Install the package
 RUN pip install --no-cache-dir .
 
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash appuser
+USER appuser
+
 # Run the MCP server
 ENTRYPOINT ["duckduckgo-mcp", "serve"]
