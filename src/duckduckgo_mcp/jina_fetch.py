@@ -6,11 +6,12 @@ This module provides functionality to fetch URLs and convert them to markdown or
 using the Jina Reader API. It supports different content types including HTML and PDFs.
 """
 
-import logging
-import requests
 import json
-from typing import Dict, Any, Optional, Union
-from urllib.parse import urlparse, quote
+import logging
+from typing import Any, Dict, Optional, Union
+from urllib.parse import quote, urlparse
+
+import requests
 
 from .server import mcp
 
@@ -36,7 +37,7 @@ def _validate_url(url: str) -> None:
     parsed_url = urlparse(url)
     if not parsed_url.scheme or not parsed_url.netloc:
         raise ValueError("Invalid URL format")
-    if parsed_url.scheme not in ('http', 'https'):
+    if parsed_url.scheme not in ("http", "https"):
         raise ValueError("Only HTTP/HTTPS URLs are supported")
 
 
@@ -56,7 +57,9 @@ def _build_headers(output_format: str, with_images: bool) -> Dict[str, str]:
     if output_format.lower() == "json":
         headers["Accept"] = "application/json"
     elif output_format.lower() != "markdown":
-        logger.warning(f"Unsupported format: {output_format}. Using markdown as default.")
+        logger.warning(
+            f"Unsupported format: {output_format}. Using markdown as default."
+        )
 
     if with_images:
         headers["X-With-Generated-Alt"] = "true"
@@ -72,9 +75,7 @@ def _truncate_content(content: str, max_length: Optional[int]) -> str:
 
 
 def _process_response(
-    response: requests.Response,
-    output_format: str,
-    max_length: Optional[int]
+    response: requests.Response, output_format: str, max_length: Optional[int]
 ) -> Union[str, Dict[str, Any]]:
     """
     Process the HTTP response based on output format.
@@ -101,7 +102,7 @@ def fetch_url(
     url: str,
     output_format: str = "markdown",
     max_length: Optional[int] = None,
-    with_images: bool = False
+    with_images: bool = False,
 ) -> Union[str, Dict[str, Any]]:
     """
     Fetch a URL and convert its content using Jina Reader API.
@@ -139,7 +140,7 @@ def jina_fetch(
     url: str,
     format: str = "markdown",
     max_length: Optional[int] = None,
-    with_images: bool = False
+    with_images: bool = False,
 ) -> Union[str, Dict[str, Any]]:
     """
     Fetch a URL and convert it to markdown or JSON using Jina Reader.
@@ -167,19 +168,6 @@ def jina_fetch(
         except (ValueError, TypeError):
             raise ValueError("max_length must be a positive integer")
 
-    return fetch_url(url, output_format=format, max_length=max_length, with_images=with_images)
-
-
-if __name__ == "__main__":
-    # Simple command-line test if run directly
-    import sys
-    if len(sys.argv) > 1:
-        try:
-            result = fetch_url(sys.argv[1], output_format="markdown", with_images=True)
-            print(result)
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            sys.exit(1)
-    else:
-        print("Usage: python jina_fetch.py <url>")
-        sys.exit(1)
+    return fetch_url(
+        url, output_format=format, max_length=max_length, with_images=with_images
+    )

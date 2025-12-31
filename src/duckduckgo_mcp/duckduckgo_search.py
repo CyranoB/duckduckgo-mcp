@@ -6,9 +6,7 @@ This tool allows searching the web using DuckDuckGo through the MCP (Model Conte
 It integrates with the ddgs library to provide reliable search results.
 """
 
-import json
 import logging
-import argparse
 from typing import Dict, List
 
 from ddgs import DDGS
@@ -22,19 +20,10 @@ logger = logging.getLogger(__name__)
 def _format_search_result(result: Dict) -> Dict[str, str]:
     """Transform a raw DuckDuckGo result to the standard format."""
     return {
-        'title': result.get('title', ''),
-        'url': result.get('href', ''),
-        'snippet': result.get('body', '')
+        "title": result.get("title", ""),
+        "url": result.get("href", ""),
+        "snippet": result.get("body", ""),
     }
-
-
-def _select_backend(query: str) -> str:
-    """Select the appropriate backend for the search.
-
-    Available backends: brave, duckduckgo, google, grokipedia, mojeek, wikipedia, yahoo, yandex
-    Using 'duckduckgo' as default for consistency with the tool's purpose.
-    """
-    return "duckduckgo"
 
 
 def _execute_search(
@@ -43,10 +32,10 @@ def _execute_search(
     safesearch: str,
     max_results: int,
     timeout: int,
-    backend: str
+    backend: str,
 ) -> List[Dict[str, str]]:
     """
-    Execute a DuckDuckGo search with the specified parameters.
+    Execute a search with the specified parameters.
 
     Args:
         query: Search query string
@@ -54,7 +43,7 @@ def _execute_search(
         safesearch: Safe search setting
         max_results: Maximum number of results
         timeout: Request timeout in seconds
-        backend: Backend to use ('html' or 'lite')
+        backend: Backend to use ('auto', 'bing', 'brave', 'google', 'mojeek', etc.)
 
     Returns:
         List of formatted search results
@@ -65,7 +54,7 @@ def _execute_search(
         region=region,
         safesearch=safesearch,
         max_results=max_results,
-        backend=backend
+        backend=backend,
     )
     return [_format_search_result(r) for r in results]
 
@@ -76,7 +65,7 @@ def _try_fallback_search(
     safesearch: str,
     max_results: int,
     timeout: int,
-    original_error: Exception
+    original_error: Exception,
 ) -> List[Dict[str, str]]:
     """
     Attempt a fallback search using the brave backend.
@@ -127,7 +116,9 @@ def _validate_search_params(query: str, max_results: int, safesearch: str) -> st
 
     valid_safesearch = ["on", "moderate", "off"]
     if safesearch not in valid_safesearch:
-        logger.warning(f"Invalid safesearch value: '{safesearch}'. Using 'moderate' instead.")
+        logger.warning(
+            f"Invalid safesearch value: '{safesearch}'. Using 'moderate' instead."
+        )
         return "moderate"
 
     return safesearch
@@ -138,7 +129,7 @@ def search_duckduckgo(
     max_results: int = 5,
     safesearch: str = "moderate",
     region: str = "wt-wt",
-    timeout: int = 15
+    timeout: int = 15,
 ) -> List[Dict[str, str]]:
     """
     Search DuckDuckGo using the ddgs library and return parsed results.
@@ -154,10 +145,11 @@ def search_duckduckgo(
         List of dictionaries containing search results with title, url, and snippet
     """
     safesearch = _validate_search_params(query, max_results, safesearch)
-    backend = _select_backend(query)
 
     try:
-        return _execute_search(query, region, safesearch, max_results, timeout, backend)
+        return _execute_search(
+            query, region, safesearch, max_results, timeout, "duckduckgo"
+        )
     except DDGSException as e:
         logger.error(f"DuckDuckGo search error: {str(e)}")
         return _try_fallback_search(query, region, safesearch, max_results, timeout, e)
@@ -168,9 +160,7 @@ def search_duckduckgo(
 
 @mcp.tool()
 def duckduckgo_search(
-    query: str,
-    max_results: int = 5,
-    safesearch: str = "moderate"
+    query: str, max_results: int = 5, safesearch: str = "moderate"
 ) -> List[Dict[str, str]]:
     """
     Search the web using DuckDuckGo.
@@ -183,16 +173,12 @@ def duckduckgo_search(
     Returns:
         List of search results with title, URL, and snippet
     """
-    if not query:
-        raise ValueError("Missing required parameter: query")
-
-    try:
-        if not isinstance(max_results, int):
+    # Type coercion for MCP clients that may pass strings
+    if not isinstance(max_results, int):
+        try:
             max_results = int(max_results)
-        if max_results <= 0:
-            raise ValueError("max_results must be a positive integer")
-    except (ValueError, TypeError):
-        raise ValueError("max_results must be a valid positive integer")
+        except (ValueError, TypeError):
+            raise ValueError("max_results must be a valid positive integer")
 
     results = search_duckduckgo(query, max_results, safesearch)
 
@@ -200,32 +186,3 @@ def duckduckgo_search(
         logger.warning(f"No results found for query: '{query}'")
 
     return results
-
-
-def main():
-    """Main function for CLI usage"""
-    parser = argparse.ArgumentParser(description="Search DuckDuckGo from the command line")
-    parser.add_argument("query", help="The search query", nargs='+')
-    parser.add_argument("--max-results", "-n", type=int, default=5,
-                        help="Maximum number of results (default: 5)")
-    parser.add_argument("--safesearch", choices=["on", "moderate", "off"],
-                        default="moderate", help="Safe search setting (default: moderate)")
-    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-
-    args = parser.parse_args()
-
-    if args.debug:
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    query = " ".join(args.query)
-    results = search_duckduckgo(
-        query=query,
-        max_results=args.max_results,
-        safesearch=args.safesearch
-    )
-
-    print(json.dumps(results, indent=2, ensure_ascii=False))
-
-
-if __name__ == "__main__":
-    main()
