@@ -4,6 +4,7 @@
 [![Python Version](https://img.shields.io/pypi/pyversions/duckduckgo-mcp?style=flat-square)](https://pypi.org/project/duckduckgo-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Downloads](https://static.pepy.tech/badge/duckduckgo-mcp/month)](https://pepy.tech/project/duckduckgo-mcp)
+[![Smithery](https://smithery.ai/badge/@cyranob/duckduckgo-mcp)](https://smithery.ai/server/@cyranob/duckduckgo-mcp)
 
 A Model Context Protocol (MCP) server that provides two capabilities:
 1) Search the web using DuckDuckGo
@@ -12,9 +13,11 @@ A Model Context Protocol (MCP) server that provides two capabilities:
 ## Features
 
 - DuckDuckGo web search with safe search controls
-- Fetch and convert URLs to markdown or JSON
+- Fetch and convert URLs to markdown or JSON using Jina Reader
+- LLM-friendly output format option for search results
 - CLI for search, fetch, serve, and version commands
 - MCP tools for LLM integration
+- Docker support for containerized deployment
 
 ## Installation
 
@@ -43,6 +46,14 @@ pip install uvx
 uvx install duckduckgo-mcp
 ```
 
+### Install via Smithery
+
+To install DuckDuckGo MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cyranob/duckduckgo-mcp):
+
+```bash
+npx -y @smithery/cli install @cyranob/duckduckgo-mcp --client claude
+```
+
 ### Install from source
 
 For development or to get the latest changes:
@@ -57,6 +68,21 @@ uv pip install -e .
 
 # Or with pip
 pip install -e .
+```
+
+### Docker
+
+Build and run with Docker:
+
+```bash
+# Build the image (uses version from latest git tag)
+docker build --build-arg VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//') -t duckduckgo-mcp .
+
+# Or specify a version manually
+docker build --build-arg VERSION=2.0.2 -t duckduckgo-mcp .
+
+# Run the server (MCP servers use STDIO, so typically run within an MCP client)
+docker run -i duckduckgo-mcp
 ```
 
 ## Usage
@@ -74,8 +100,11 @@ duckduckgo-mcp serve --debug
 ### Testing the Search Tool
 
 ```bash
-# Search DuckDuckGo
+# Search DuckDuckGo (JSON output, default)
 duckduckgo-mcp search "your search query" --max-results 5 --safesearch moderate
+
+# Search with LLM-friendly text output
+duckduckgo-mcp search "your search query" --output-format text
 ```
 
 ### Testing the Fetch Tool
@@ -203,7 +232,12 @@ The server exposes these tools to MCP clients:
 
 ```python
 @mcp.tool()
-def duckduckgo_search(query: str, max_results: int = 5, safesearch: str = "moderate") -> list:
+def duckduckgo_search(
+    query: str,
+    max_results: int = 5,
+    safesearch: str = "moderate",
+    output_format: str = "json"
+) -> list | str:
     """Search DuckDuckGo for the given query."""
 ```
 
@@ -219,6 +253,9 @@ Example usage in an MCP client:
 # This is handled automatically by the MCP client
 results = duckduckgo_search("Python programming", max_results=3)
 content = jina_fetch("https://example.com", format="markdown")
+
+# Get LLM-friendly text output
+text_results = duckduckgo_search("Python programming", output_format="text")
 ```
 
 ## API
@@ -233,10 +270,11 @@ content = jina_fetch("https://example.com", format="markdown")
 - `query` (string, required): The search query
 - `max_results` (integer, optional, default: 5): Maximum number of search results to return
 - `safesearch` (string, optional, default: "moderate"): Safe search setting ("on", "moderate", or "off")
+- `output_format` (string, optional, default: "json"): Output format - "json" for structured data, "text" for LLM-friendly formatted string
 
 #### Response
 
-A list of dictionaries:
+**JSON format** (default): A list of dictionaries:
 
 ```json
 [
@@ -246,6 +284,20 @@ A list of dictionaries:
     "snippet": "Text snippet from the search result"
   }
 ]
+```
+
+**Text format**: An LLM-friendly formatted string:
+
+```
+Found 3 search results:
+
+1. Result title
+   URL: https://example.com
+   Summary: Text snippet from the search result
+
+2. Another result
+   URL: https://example2.com
+   Summary: Another snippet
 ```
 
 ### Tool 2: Fetch
