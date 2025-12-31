@@ -17,9 +17,6 @@ keywords:
   - jina
   - privacy
 
-build:
-  dockerBuildPath: .
-
 startCommand:
   type: stdio
   configSchema:
@@ -31,10 +28,10 @@ startCommand:
         default: false
   commandFunction: |-
     (config) => ({
-      command: 'duckduckgo-mcp',
+      command: 'uvx',
       args: config.debug
-        ? ['serve', '--debug']
-        : ['serve']
+        ? ['duckduckgo-mcp', 'serve', '--debug']
+        : ['duckduckgo-mcp', 'serve']
     })
   exampleConfig:
     debug: false
