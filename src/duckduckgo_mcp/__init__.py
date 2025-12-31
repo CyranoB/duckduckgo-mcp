@@ -1,5 +1,6 @@
 """DuckDuckGo MCP Server - A Model Context Protocol server for web search and content retrieval."""
 
+from .server import mcp
 from .duckduckgo_search import duckduckgo_search, search_duckduckgo
 from .jina_fetch import jina_fetch, fetch_url
 
@@ -16,4 +17,4 @@ except ImportError:
         # Fallback if importlib.metadata is not available (Python < 3.8)
         __version__ = "0.1.0"
 
-__all__ = ["duckduckgo_search", "search_duckduckgo", "jina_fetch", "fetch_url", "__version__"]
+__all__ = ["mcp", "duckduckgo_search", "search_duckduckgo", "jina_fetch", "fetch_url", "__version__"]
