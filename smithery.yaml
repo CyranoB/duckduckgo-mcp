@@ -1,5 +1,8 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
 
+build:
+  dockerBuildPath: .
+
 startCommand:
   type: stdio
   configSchema:
@@ -11,10 +14,10 @@ startCommand:
         default: false
   commandFunction: |-
     (config) => ({
-      command: 'uvx',
+      command: 'duckduckgo-mcp',
       args: config.debug
-        ? ['duckduckgo-mcp', 'serve', '--debug']
-        : ['duckduckgo-mcp', 'serve']
+        ? ['serve', '--debug']
+        : ['serve']
     })
   exampleConfig:
     debug: false
