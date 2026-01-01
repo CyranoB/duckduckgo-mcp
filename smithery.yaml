@@ -16,6 +16,12 @@ keywords:
   - fetch
   - jina
   - privacy
+files:
+  - README.md
+  - pyproject.toml
+  - src/duckduckgo_mcp/server.py
+  - src/duckduckgo_mcp/duckduckgo_search.py
+  - src/duckduckgo_mcp/jina_fetch.py
 
 startCommand:
   type: stdio
