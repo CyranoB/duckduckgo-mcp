@@ -272,3 +272,31 @@ class TestPositionFieldPresence:
         # Verify no duplicate positions
         positions = [r["position"] for r in results]
         assert len(positions) == len(set(positions))
+
+
+class TestFormatResultsIntegration:
+    """Integration tests for result formatting with various formats."""
+
+    def test_text_format_preserves_position_numbering(self):
+        """Test that text format includes position numbering."""
+        results = [
+            {"title": "Result 1", "url": "https://example1.com", "snippet": "Snippet 1", "position": 1},
+            {"title": "Result 2", "url": "https://example2.com", "snippet": "Snippet 2", "position": 2},
+        ]
+
+        text = _format_results_as_text(results, "test")
+
+        # Verify position numbering in text format
+        assert "1. Result 1" in text
+        assert "2. Result 2" in text
+
+    def test_text_format_with_single_result(self):
+        """Test text format with a single result."""
+        results = [
+            {"title": "Only Result", "url": "https://example.com", "snippet": "Text", "position": 1}
+        ]
+
+        text = _format_results_as_text(results, "test")
+
+        assert "Found 1 search results:" in text
+        assert "1. Only Result" in text
