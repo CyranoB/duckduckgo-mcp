@@ -3,23 +3,23 @@
   "spec": "005-position-field-in-json-results",
   "state": "building",
   "subtasks": {
-    "completed": 0,
+    "completed": 12,
     "total": 14,
-    "in_progress": 1,
+    "in_progress": 0,
     "failed": 0
   },
   "phase": {
-    "current": "",
-    "id": 0,
-    "total": 0
+    "current": "Code Quality Checks",
+    "id": 5,
+    "total": 5
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 8,
+    "number": 11,
     "started_at": "2026-01-08T23:46:56.708392"
   },
-  "last_update": "2026-01-09T00:01:08.143956"
+  "last_update": "2026-01-09T00:25:00.000000"
 }
