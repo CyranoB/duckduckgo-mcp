@@ -17,16 +17,17 @@ from .server import mcp
 logger = logging.getLogger(__name__)
 
 
-def _format_search_result(result: Dict) -> Dict[str, str]:
+def _format_search_result(result: Dict, position: int) -> Dict[str, Union[str, int]]:
     """Transform a raw DuckDuckGo result to the standard format."""
     return {
         "title": result.get("title", ""),
         "url": result.get("href", ""),
         "snippet": result.get("body", ""),
+        "position": position,
     }
 
 
-def _format_results_as_text(results: List[Dict[str, str]], query: str) -> str:
+def _format_results_as_text(results: List[Dict[str, Union[str, int]]], query: str) -> str:
     """
     Format search results as LLM-friendly natural language text.
 
@@ -62,7 +63,7 @@ def _execute_search(
     max_results: int,
     timeout: int,
     backend: str,
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Union[str, int]]]:
     """
     Execute a search with the specified parameters.
 
@@ -85,7 +86,7 @@ def _execute_search(
         max_results=max_results,
         backend=backend,
     )
-    return [_format_search_result(r) for r in results]
+    return [_format_search_result(r, position) for position, r in enumerate(results, start=1)]
 
 
 def _try_fallback_search(
@@ -95,7 +96,7 @@ def _try_fallback_search(
     max_results: int,
     timeout: int,
     original_error: Exception,
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Union[str, int]]]:
     """
     Attempt a fallback search using the brave backend.
 
@@ -159,7 +160,7 @@ def search_duckduckgo(
     safesearch: str = "moderate",
     region: str = "wt-wt",
     timeout: int = 15,
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Union[str, int]]]:
     """
     Search DuckDuckGo using the ddgs library and return parsed results.
 
@@ -193,7 +194,7 @@ def duckduckgo_search(
     max_results: int = 5,
     safesearch: str = "moderate",
     output_format: str = "json",
-) -> Union[List[Dict[str, str]], str]:
+) -> Union[List[Dict[str, Union[str, int]]], str]:
     """
     Search the web using DuckDuckGo.
 

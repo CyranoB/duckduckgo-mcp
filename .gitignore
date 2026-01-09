@@ -145,3 +145,6 @@ repl_state/
 config.ini
 *.log
 logs/
+
+# Auto Claude data directory
+.auto-claude/

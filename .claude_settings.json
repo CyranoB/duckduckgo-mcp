@@ -1,0 +1,39 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/worktrees/tasks/005-position-field-in-json-results/**)",
+      "Write(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/worktrees/tasks/005-position-field-in-json-results/**)",
+      "Edit(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/worktrees/tasks/005-position-field-in-json-results/**)",
+      "Glob(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/worktrees/tasks/005-position-field-in-json-results/**)",
+      "Grep(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/worktrees/tasks/005-position-field-in-json-results/**)",
+      "Read(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/worktrees/tasks/005-position-field-in-json-results/.auto-claude/specs/005-position-field-in-json-results/**)",
+      "Write(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/worktrees/tasks/005-position-field-in-json-results/.auto-claude/specs/005-position-field-in-json-results/**)",
+      "Edit(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/worktrees/tasks/005-position-field-in-json-results/.auto-claude/specs/005-position-field-in-json-results/**)",
+      "Read(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/**)",
+      "Write(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/**)",
+      "Edit(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/**)",
+      "Glob(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/**)",
+      "Grep(/Users/eddie/projects/duckduckgo-mcp/.auto-claude/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}
