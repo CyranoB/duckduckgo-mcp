@@ -279,9 +279,16 @@ text_results = duckduckgo_search("Python programming", output_format="text")
 ```json
 [
   {
+    "position": 1,
     "title": "Result title",
     "url": "https://example.com",
     "snippet": "Text snippet from the search result"
+  },
+  {
+    "position": 2,
+    "title": "Another result",
+    "url": "https://example2.com",
+    "snippet": "Another snippet"
   }
 ]
 ```
