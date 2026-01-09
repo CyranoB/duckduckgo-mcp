@@ -62,7 +62,10 @@ class TestExecuteSearch:
         ]
 
         # This is what _execute_search does
-        results = [_format_search_result(r, position) for position, r in enumerate(raw_results, start=1)]
+        results = [
+            _format_search_result(r, position)
+            for position, r in enumerate(raw_results, start=1)
+        ]
 
         assert len(results) == 3
 
@@ -80,7 +83,10 @@ class TestExecuteSearch:
         raw_results = []
 
         # This is what _execute_search does
-        results = [_format_search_result(r, position) for position, r in enumerate(raw_results, start=1)]
+        results = [
+            _format_search_result(r, position)
+            for position, r in enumerate(raw_results, start=1)
+        ]
 
         assert results == []
 
@@ -212,12 +218,19 @@ class TestPositionFieldPresence:
         """Test that every result includes a position field."""
         # Create test results
         raw_results = [
-            {"title": f"Result {i}", "href": f"https://example{i}.com", "body": f"Snippet {i}"}
+            {
+                "title": f"Result {i}",
+                "href": f"https://example{i}.com",
+                "body": f"Snippet {i}",
+            }
             for i in range(1, 6)
         ]
 
         # Format them like _execute_search does
-        results = [_format_search_result(r, position) for position, r in enumerate(raw_results, start=1)]
+        results = [
+            _format_search_result(r, position)
+            for position, r in enumerate(raw_results, start=1)
+        ]
 
         # Check that every result has a position field
         for result in results:
@@ -233,7 +246,10 @@ class TestPositionFieldPresence:
         ]
 
         # Format them like _execute_search does
-        results = [_format_search_result(r, position) for position, r in enumerate(raw_results, start=1)]
+        results = [
+            _format_search_result(r, position)
+            for position, r in enumerate(raw_results, start=1)
+        ]
 
         positions = [r["position"] for r in results]
         expected_positions = list(range(1, 10))
@@ -248,7 +264,10 @@ class TestPositionFieldPresence:
         ]
 
         # Format it like _execute_search does
-        results = [_format_search_result(r, position) for position, r in enumerate(raw_results, start=1)]
+        results = [
+            _format_search_result(r, position)
+            for position, r in enumerate(raw_results, start=1)
+        ]
 
         assert len(results) == 1
         assert results[0]["position"] == 1
@@ -262,7 +281,10 @@ class TestPositionFieldPresence:
         ]
 
         # Format them like _execute_search does
-        results = [_format_search_result(r, position) for position, r in enumerate(raw_results, start=1)]
+        results = [
+            _format_search_result(r, position)
+            for position, r in enumerate(raw_results, start=1)
+        ]
 
         # Check that each position is unique and correct
         assert results[0]["position"] == 1
@@ -280,8 +302,18 @@ class TestFormatResultsIntegration:
     def test_text_format_preserves_position_numbering(self):
         """Test that text format includes position numbering."""
         results = [
-            {"title": "Result 1", "url": "https://example1.com", "snippet": "Snippet 1", "position": 1},
-            {"title": "Result 2", "url": "https://example2.com", "snippet": "Snippet 2", "position": 2},
+            {
+                "title": "Result 1",
+                "url": "https://example1.com",
+                "snippet": "Snippet 1",
+                "position": 1,
+            },
+            {
+                "title": "Result 2",
+                "url": "https://example2.com",
+                "snippet": "Snippet 2",
+                "position": 2,
+            },
         ]
 
         text = _format_results_as_text(results, "test")
@@ -293,7 +325,12 @@ class TestFormatResultsIntegration:
     def test_text_format_with_single_result(self):
         """Test text format with a single result."""
         results = [
-            {"title": "Only Result", "url": "https://example.com", "snippet": "Text", "position": 1}
+            {
+                "title": "Only Result",
+                "url": "https://example.com",
+                "snippet": "Text",
+                "position": 1,
+            }
         ]
 
         text = _format_results_as_text(results, "test")
