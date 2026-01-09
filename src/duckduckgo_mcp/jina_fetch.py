@@ -89,7 +89,7 @@ def _process_response(
         Processed content as string or dict
     """
     if output_format.lower() == "json":
-        content = response.json()
+        content: Dict[str, Any] = response.json()
         if max_length and content.get("content"):
             content["content"] = _truncate_content(content["content"], max_length)
         return content

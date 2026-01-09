@@ -97,14 +97,16 @@ def _handle_serve(args: argparse.Namespace) -> int:
         max_results: int = 5,
         safesearch: str = "moderate",
         output_format: str = "json",
-    ) -> Union[List[Dict[str, str]], str]:
+    ) -> Union[List[Dict[str, Union[str, int]]], str]:
         """Search DuckDuckGo for the given query."""
         logging.debug(
             f"Searching for: {query} "
             f"(max_results: {max_results}, safesearch: {safesearch}, "
             f"output_format: {output_format})"
         )
-        results = duckduckgo_search(query, max_results, safesearch, output_format)
+        results: Union[List[Dict[str, Union[str, int]]], str] = duckduckgo_search(
+            query, max_results, safesearch, output_format
+        )
         if isinstance(results, list):
             logging.debug(f"Found {len(results)} results")
         return results

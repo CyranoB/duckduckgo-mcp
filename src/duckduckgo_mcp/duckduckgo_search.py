@@ -191,7 +191,7 @@ def search_duckduckgo(
 @mcp.tool()
 def duckduckgo_search(
     query: str,
-    max_results: int = 5,
+    max_results: Union[int, str] = 5,
     safesearch: str = "moderate",
     output_format: str = "json",
 ) -> Union[List[Dict[str, Union[str, int]]], str]:
