@@ -1,20 +1,18 @@
 """Tests for DuckDuckGo search functionality."""
 
 import sys
-from unittest.mock import Mock, patch, MagicMock, call
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
 # Mock fastmcp before importing the module
 sys.modules["fastmcp"] = MagicMock()
 
-from duckduckgo_mcp.duckduckgo_search import (
-    _format_search_result,
-    _execute_search,
-    _format_results_as_text,
-    _validate_search_params,
-    search_duckduckgo,
-)
+from duckduckgo_mcp.duckduckgo_search import (_execute_search,
+                                              _format_results_as_text,
+                                              _format_search_result,
+                                              _validate_search_params,
+                                              search_duckduckgo)
 
 
 class TestFormatSearchResult:
