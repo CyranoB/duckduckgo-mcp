@@ -23,6 +23,7 @@ from .exceptions import (
     NetworkError,
     RateLimitError,
     ServiceUnavailableError,
+    ValidationError,
 )
 from .exceptions import TimeoutError as MCPTimeoutError
 from .server import mcp
@@ -401,21 +402,84 @@ def jina_fetch(
 
     Returns:
         The fetched content in the specified format (markdown string or JSON object)
+
+    Raises:
+        ValidationError: If parameters are invalid (missing url, invalid format, invalid max_length)
+        InvalidURLError: If the URL format is invalid
+        MCPError: If there's a network, service, or other error during fetch
     """
+    # Validate required 'url' parameter
     if not url:
-        raise ValueError("Missing required parameter: url")
+        raise ValidationError(
+            "Missing required parameter: url",
+            guidance=(
+                "The 'url' parameter is required. Please provide a valid URL to fetch.\n"
+                "Example: jina_fetch(url='https://example.com')"
+            ),
+        )
 
+    # Validate 'format' parameter
     if format and format.lower() not in ["markdown", "json"]:
-        raise ValueError("Format must be either 'markdown' or 'json'")
+        raise ValidationError(
+            f"Invalid format: '{format}'. Format must be either 'markdown' or 'json'.",
+            guidance=(
+                "The 'format' parameter accepts two values:\n"
+                "  • 'markdown' (default) - Returns content as formatted markdown\n"
+                "  • 'json' - Returns content as a JSON object with metadata\n"
+                f"You provided: '{format}'"
+            ),
+        )
 
+    # Validate 'max_length' parameter
     if max_length is not None:
         try:
             max_length = int(max_length)
             if max_length <= 0:
-                raise ValueError("max_length must be a positive integer")
+                raise ValidationError(
+                    f"Invalid max_length: {max_length}. max_length must be a positive integer.",
+                    guidance=(
+                        "The 'max_length' parameter limits the response content length.\n"
+                        "  • Must be a positive integer (e.g., 1000, 5000, 10000)\n"
+                        "  • Set to None (or omit) for unlimited length\n"
+                        f"You provided: {max_length}"
+                    ),
+                )
         except (ValueError, TypeError):
-            raise ValueError("max_length must be a positive integer")
+            raise ValidationError(
+                f"Invalid max_length: '{max_length}'. max_length must be a positive integer.",
+                guidance=(
+                    "The 'max_length' parameter must be a number.\n"
+                    "  • Provide a positive integer (e.g., 1000, 5000, 10000)\n"
+                    "  • Set to None (or omit) for unlimited length\n"
+                    f"You provided: '{max_length}' (type: {type(max_length).__name__})"
+                ),
+            )
 
-    return fetch_url(
-        url, output_format=format, max_length=max_length, with_images=with_images
+    # Log the request at debug level
+    logger.debug(
+        f"jina_fetch called: url={url!r}, format={format!r}, "
+        f"max_length={max_length!r}, with_images={with_images!r}"
     )
+
+    try:
+        result = fetch_url(
+            url, output_format=format, max_length=max_length, with_images=with_images
+        )
+        logger.debug(f"jina_fetch successful for URL: {url}")
+        return result
+    except MCPError as e:
+        # Log the error with appropriate level based on category
+        if e.category.value == "network":
+            logger.warning(f"Network error fetching URL '{url}': {e.message}")
+        elif e.category.value == "service":
+            logger.warning(f"Service error fetching URL '{url}': {e.message}")
+        elif e.category.value == "validation":
+            logger.info(f"Validation error for URL '{url}': {e.message}")
+        else:
+            logger.error(f"Error fetching URL '{url}': {e.message}")
+        # Re-raise to propagate the actionable error message
+        raise
+    except Exception as e:
+        # Log unexpected errors at error level
+        logger.error(f"Unexpected error fetching URL '{url}': {e}")
+        raise
