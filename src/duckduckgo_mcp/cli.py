@@ -12,7 +12,8 @@ import traceback
 from typing import Callable, Dict, List, Union
 
 from .duckduckgo_search import duckduckgo_search
-from .exceptions import MCPError
+from .exceptions import (ConfigurationError, DependencyError, MCPError,
+                         PortBindingError, ServerStartupError)
 from .jina_fetch import fetch_url
 from .server import mcp
 
@@ -182,9 +183,165 @@ def _handle_fetch(args: argparse.Namespace) -> int:
         return 1
 
 
+def _classify_server_error(error: Exception) -> MCPError:
+    """
+    Classify a server startup exception into a specific MCPError subclass.
+
+    Analyzes the exception type and message to provide actionable guidance
+    for common server startup issues.
+
+    Args:
+        error: The exception that occurred during server startup
+
+    Returns:
+        An appropriate MCPError subclass with actionable guidance
+    """
+    error_msg = str(error).lower()
+
+    # Check for import/dependency errors
+    if isinstance(error, ImportError) or isinstance(error, ModuleNotFoundError):
+        # Try to extract package name from error message
+        package_name = None
+        original_msg = str(error)
+        if "No module named" in original_msg:
+            # Extract package name from "No module named 'package'"
+            import re
+
+            match = re.search(r"No module named ['\"]?([^'\"]+)['\"]?", original_msg)
+            if match:
+                package_name = match.group(1).split(".")[0]
+
+        # Provide package-specific guidance
+        guidance = None
+        if package_name == "fastmcp" or package_name == "mcp":
+            guidance = (
+                f"The '{package_name}' package is not installed. To fix:\n"
+                "  1. Install with pip:\n"
+                "     pip install fastmcp\n"
+                "  2. Or reinstall duckduckgo-mcp:\n"
+                "     pip install duckduckgo-mcp\n"
+                "  3. If using uv:\n"
+                "     uv pip install fastmcp"
+            )
+        elif package_name == "ddgs":
+            guidance = (
+                "The 'ddgs' package (DuckDuckGo search) is not installed. To fix:\n"
+                "  1. Install with pip:\n"
+                "     pip install ddgs\n"
+                "  2. Or reinstall duckduckgo-mcp:\n"
+                "     pip install duckduckgo-mcp\n"
+                "  3. If using uv:\n"
+                "     uv pip install ddgs"
+            )
+
+        return DependencyError(
+            message=f"Failed to import required module: {original_msg}",
+            package_name=package_name,
+            guidance=guidance,
+        )
+
+    # Check for port binding / address in use errors
+    if isinstance(error, OSError):
+        # Check for "Address already in use" or similar
+        if "address already in use" in error_msg or error.errno == 98:
+            # Try to extract port from error
+            port = None
+            import re
+
+            match = re.search(r"port[:\s]+(\d+)", error_msg)
+            if match:
+                port = int(match.group(1))
+            return PortBindingError(
+                message=f"Failed to bind to address: {error}",
+                port=port,
+            )
+        # Check for permission denied (e.g., binding to privileged port)
+        if "permission denied" in error_msg or error.errno == 13:
+            return ServerStartupError(
+                message=f"Permission denied: {error}",
+                guidance=(
+                    "The server lacks permission for the requested operation. Try:\n"
+                    "  • Using a non-privileged port (> 1024)\n"
+                    "  • Running with appropriate permissions\n"
+                    "  • Checking file/directory permissions for logging"
+                ),
+            )
+
+    # Check for permission errors
+    if isinstance(error, PermissionError):
+        return ServerStartupError(
+            message=f"Permission denied: {error}",
+            guidance=(
+                "The server lacks required permissions. Please check:\n"
+                "  • File permissions for configuration files\n"
+                "  • Directory permissions for logs or data\n"
+                "  • User has access to required resources"
+            ),
+        )
+
+    # Check for attribute/type errors (often configuration issues)
+    if isinstance(error, (AttributeError, TypeError)):
+        return ConfigurationError(
+            message=f"Configuration error: {error}",
+            guidance=(
+                "The server encountered a configuration problem. Please check:\n"
+                "  • MCP client configuration is valid JSON\n"
+                "  • Command arguments match expected format\n"
+                "  • Environment variables are set correctly\n"
+                "Run with --debug for more details."
+            ),
+        )
+
+    # Check for value errors (often configuration issues)
+    if isinstance(error, ValueError):
+        return ConfigurationError(
+            message=f"Invalid configuration value: {error}",
+            guidance=(
+                "A configuration value is invalid. Please check:\n"
+                "  • Transport type is valid (stdio, sse, etc.)\n"
+                "  • Port numbers are in valid range\n"
+                "  • All required settings are provided"
+            ),
+        )
+
+    # Check for runtime errors
+    if isinstance(error, RuntimeError):
+        # Check for event loop related errors
+        if "event loop" in error_msg or "asyncio" in error_msg:
+            return ServerStartupError(
+                message=f"Async runtime error: {error}",
+                guidance=(
+                    "An async runtime error occurred. This could be due to:\n"
+                    "  • Conflicting event loops\n"
+                    "  • Running in an incompatible environment\n"
+                    "Try running from a fresh terminal or check for conflicting async code."
+                ),
+            )
+
+    # Generic server startup error for unclassified exceptions
+    return ServerStartupError(
+        message=f"Server startup failed: {error}",
+        guidance=(
+            "The MCP server failed to start unexpectedly. Please:\n"
+            "  • Run with --debug for detailed error information\n"
+            "  • Check that all dependencies are installed\n"
+            "  • Verify your configuration is correct\n"
+            "  • Report this issue if the problem persists"
+        ),
+    )
+
+
 def _handle_serve(args: argparse.Namespace) -> int:
-    """Handle the serve command."""
+    """
+    Handle the serve command.
+
+    Starts the MCP server with comprehensive error handling for common
+    startup issues like missing dependencies, port binding errors, and
+    configuration problems.
+    """
     from . import __version__
+
+    debug = getattr(args, "debug", False)
 
     logging.info(f"Starting DuckDuckGo MCP Server v{__version__} (STDIO transport)")
     logging.info("Press Ctrl+C to stop the server")
@@ -213,8 +370,16 @@ def _handle_serve(args: argparse.Namespace) -> int:
     except KeyboardInterrupt:
         logging.info("Server stopped by user")
         return 0
+    except MCPError as e:
+        # MCPError subclasses already have actionable guidance
+        print(_format_error(e, debug=debug), file=sys.stderr)
+        logging.debug(f"Server MCPError: {type(e).__name__}: {e.message}")
+        return 1
     except Exception as e:
-        logging.error(f"Error running MCP server: {e}")
+        # Classify the error and provide actionable guidance
+        classified_error = _classify_server_error(e)
+        print(_format_error(classified_error, debug=debug), file=sys.stderr)
+        logging.error(f"Server startup error: {e}")
         return 1
 
 

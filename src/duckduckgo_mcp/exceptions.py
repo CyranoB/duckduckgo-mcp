@@ -467,3 +467,164 @@ class ContentParsingError(MCPError):
             f"category={self.category!r}, "
             f"guidance={self.guidance!r})"
         )
+
+
+# =============================================================================
+# Server-Related Exceptions
+# =============================================================================
+
+
+class ServerStartupError(MCPError):
+    """
+    Exception for MCP server startup errors.
+
+    Raised when the server fails to start due to configuration issues,
+    missing dependencies, or system-level problems.
+    """
+
+    error_code: str = "SERVER_STARTUP_ERROR"
+    category: ErrorCategory = ErrorCategory.SERVICE
+    default_guidance: str = (
+        "The MCP server failed to start. Please check:\n"
+        "  • All required dependencies are installed\n"
+        "  • Configuration is valid\n"
+        "  • No other process is using required resources\n"
+        "Run with --debug for more details."
+    )
+
+
+class DependencyError(ServerStartupError):
+    """
+    Exception for missing or incompatible dependencies.
+
+    Raised when required packages are not installed or have
+    version incompatibilities.
+    """
+
+    error_code: str = "DEPENDENCY_ERROR"
+    default_guidance: str = (
+        "A required dependency is missing or incompatible. To fix:\n"
+        "  1. Ensure you've installed all dependencies:\n"
+        "     pip install duckduckgo-mcp\n"
+        "  2. Or for development:\n"
+        "     pip install -e '.[dev]'\n"
+        "  3. If using uv:\n"
+        "     uv pip install duckduckgo-mcp\n"
+        "Check the error message for the specific missing package."
+    )
+
+    def __init__(
+        self,
+        message: str,
+        package_name: Optional[str] = None,
+        error_code: Optional[str] = None,
+        category: Optional[ErrorCategory] = None,
+        guidance: Optional[str] = None,
+    ) -> None:
+        """
+        Initialize the DependencyError.
+
+        Args:
+            message: Human-readable error message
+            package_name: Name of the missing/incompatible package
+            error_code: Optional short identifier for the error type
+            category: Optional error category
+            guidance: Optional actionable guidance
+        """
+        self.package_name = package_name
+        super().__init__(message, error_code, category, guidance)
+
+    def __repr__(self) -> str:
+        """Return a detailed representation of the error."""
+        return (
+            f"{self.__class__.__name__}("
+            f"message={self.message!r}, "
+            f"package_name={self.package_name!r}, "
+            f"error_code={self.error_code!r}, "
+            f"category={self.category!r}, "
+            f"guidance={self.guidance!r})"
+        )
+
+
+class ConfigurationError(ServerStartupError):
+    """
+    Exception for server configuration errors.
+
+    Raised when the server configuration is invalid or incomplete,
+    such as missing required settings or invalid values.
+    """
+
+    error_code: str = "CONFIG_ERROR"
+    default_guidance: str = (
+        "The server configuration is invalid. Please check:\n"
+        "  • MCP client configuration (e.g., Claude Desktop config)\n"
+        "  • Environment variables are set correctly\n"
+        "  • Command-line arguments are valid\n"
+        "Refer to the README for configuration examples."
+    )
+
+
+class PortBindingError(ServerStartupError):
+    """
+    Exception for port binding errors.
+
+    Raised when the server cannot bind to a required network port,
+    typically because the port is already in use or requires elevated privileges.
+    """
+
+    error_code: str = "PORT_BINDING_ERROR"
+    category: ErrorCategory = ErrorCategory.NETWORK
+    default_guidance: str = (
+        "Failed to bind to the required network port. This could mean:\n"
+        "  • Another process is using the port (check with 'lsof -i :<port>')\n"
+        "  • The port requires elevated privileges (ports < 1024)\n"
+        "  • A firewall is blocking access\n"
+        "Try stopping other services or using a different port."
+    )
+
+    def __init__(
+        self,
+        message: str,
+        port: Optional[int] = None,
+        error_code: Optional[str] = None,
+        category: Optional[ErrorCategory] = None,
+        guidance: Optional[str] = None,
+    ) -> None:
+        """
+        Initialize the PortBindingError.
+
+        Args:
+            message: Human-readable error message
+            port: The port number that failed to bind
+            error_code: Optional short identifier for the error type
+            category: Optional error category
+            guidance: Optional actionable guidance
+        """
+        self.port = port
+        super().__init__(message, error_code, category, guidance)
+
+    @property
+    def guidance(self) -> str:
+        """Return guidance with port-specific information if available."""
+        if self._guidance is not None:
+            return self._guidance
+        if self.port is not None:
+            return (
+                f"Failed to bind to port {self.port}. This could mean:\n"
+                f"  • Another process is using port {self.port} (check with 'lsof -i :{self.port}')\n"
+                f"  • The port requires elevated privileges (ports < 1024)\n"
+                "  • A firewall is blocking access\n"
+                "Try stopping other services or using a different port."
+            )
+        return self.default_guidance
+
+    def __repr__(self) -> str:
+        """Return a detailed representation of the error."""
+        return (
+            f"{self.__class__.__name__}("
+            f"message={self.message!r}, "
+            f"port={self.port!r}, "
+            f"error_code={self.error_code!r}, "
+            f"category={self.category!r}, "
+            f"guidance={self.guidance!r})"
+        )
