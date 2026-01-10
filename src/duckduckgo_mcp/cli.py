@@ -156,6 +156,7 @@ def _handle_search(args: argparse.Namespace) -> int:
 
 def _handle_fetch(args: argparse.Namespace) -> int:
     """Handle the fetch command."""
+    debug = getattr(args, "debug", False)
     try:
         result = fetch_url(
             url=args.url,
@@ -169,7 +170,14 @@ def _handle_fetch(args: argparse.Namespace) -> int:
         else:
             print(result)
         return 0
+    except MCPError as e:
+        # Format and display actionable error message
+        print(_format_error(e, debug=debug), file=sys.stderr)
+        logging.debug(f"Fetch MCPError: {type(e).__name__}: {e.message}")
+        return 1
     except Exception as e:
+        # Handle unexpected errors with generic formatting
+        print(_format_error(e, debug=debug), file=sys.stderr)
         logging.error(f"Fetch error: {str(e)}")
         return 1
 
@@ -264,6 +272,9 @@ def _setup_parser() -> argparse.ArgumentParser:
     )
     fetch_parser.add_argument(
         "--with-images", action="store_true", help="Generate alt text for images"
+    )
+    fetch_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug output with full traceback"
     )
 
     # Version command
