@@ -161,3 +161,176 @@ class DNSError(NetworkError):
         "  • The domain exists and is accessible\n"
         "Try using a different DNS server or verify the URL."
     )
+
+
+# =============================================================================
+# Service-Related Exceptions
+# =============================================================================
+
+
+class HTTPError(MCPError):
+    """
+    Exception for generic HTTP status errors.
+
+    Raised when an HTTP request returns a non-success status code.
+    Tracks the status code for more specific error handling.
+    """
+
+    error_code: str = "HTTP_ERROR"
+    category: ErrorCategory = ErrorCategory.SERVICE
+    default_guidance: str = (
+        "The server returned an error response. This may be a temporary issue.\n"
+        "Try again in a few moments."
+    )
+
+    def __init__(
+        self,
+        message: str,
+        status_code: Optional[int] = None,
+        error_code: Optional[str] = None,
+        category: Optional[ErrorCategory] = None,
+        guidance: Optional[str] = None,
+    ) -> None:
+        """
+        Initialize the HTTPError.
+
+        Args:
+            message: Human-readable error message
+            status_code: HTTP status code that caused the error
+            error_code: Optional short identifier for the error type
+            category: Optional error category
+            guidance: Optional actionable guidance
+        """
+        self.status_code = status_code
+        super().__init__(message, error_code, category, guidance)
+
+    def __str__(self) -> str:
+        """Format the error with status code, message, and guidance."""
+        status_info = f" (HTTP {self.status_code})" if self.status_code else ""
+        return (
+            f"[{self.category.value.upper()}:{self.error_code}]{status_info} {self.message}\n"
+            f"Guidance: {self.guidance}"
+        )
+
+    def __repr__(self) -> str:
+        """Return a detailed representation of the error."""
+        return (
+            f"{self.__class__.__name__}("
+            f"message={self.message!r}, "
+            f"status_code={self.status_code!r}, "
+            f"error_code={self.error_code!r}, "
+            f"category={self.category!r}, "
+            f"guidance={self.guidance!r})"
+        )
+
+
+class RateLimitError(HTTPError):
+    """
+    Exception for rate limiting errors (HTTP 429).
+
+    Raised when too many requests have been made in a short period
+    and the service is throttling requests.
+    """
+
+    error_code: str = "RATE_LIMIT"
+    default_guidance: str = (
+        "You've made too many requests in a short period. Please:\n"
+        "  • Wait 30-60 seconds before trying again\n"
+        "  • Reduce the frequency of your requests\n"
+        "  • Consider adding delays between consecutive requests\n"
+        "The rate limit typically resets after a brief waiting period."
+    )
+
+    def __init__(
+        self,
+        message: str,
+        retry_after: Optional[int] = None,
+        status_code: Optional[int] = None,
+        error_code: Optional[str] = None,
+        category: Optional[ErrorCategory] = None,
+        guidance: Optional[str] = None,
+    ) -> None:
+        """
+        Initialize the RateLimitError.
+
+        Args:
+            message: Human-readable error message
+            retry_after: Number of seconds to wait before retrying (from Retry-After header)
+            status_code: HTTP status code (defaults to 429)
+            error_code: Optional short identifier for the error type
+            category: Optional error category
+            guidance: Optional actionable guidance
+        """
+        self.retry_after = retry_after
+        # Default status code to 429 if not provided
+        if status_code is None:
+            status_code = 429
+        super().__init__(message, status_code, error_code, category, guidance)
+
+    @property
+    def guidance(self) -> str:
+        """Return guidance with retry timing if available."""
+        if self._guidance is not None:
+            return self._guidance
+        if self.retry_after is not None:
+            return (
+                f"You've been rate limited. Please wait {self.retry_after} seconds "
+                f"before trying again.\n"
+                "  • Reduce the frequency of your requests\n"
+                "  • Consider adding delays between consecutive requests"
+            )
+        return self.default_guidance
+
+    def __repr__(self) -> str:
+        """Return a detailed representation of the error."""
+        return (
+            f"{self.__class__.__name__}("
+            f"message={self.message!r}, "
+            f"retry_after={self.retry_after!r}, "
+            f"status_code={self.status_code!r}, "
+            f"error_code={self.error_code!r}, "
+            f"category={self.category!r}, "
+            f"guidance={self.guidance!r})"
+        )
+
+
+class ServiceUnavailableError(HTTPError):
+    """
+    Exception for service unavailable errors (HTTP 503).
+
+    Raised when the external service is temporarily unavailable,
+    typically due to maintenance or overload.
+    """
+
+    error_code: str = "SERVICE_UNAVAILABLE"
+    default_guidance: str = (
+        "The service is temporarily unavailable. This usually means:\n"
+        "  • The service is undergoing maintenance\n"
+        "  • The service is experiencing high load\n"
+        "  • There's a temporary outage\n"
+        "Please try again in a few minutes. If the problem persists, "
+        "check the service's status page."
+    )
+
+    def __init__(
+        self,
+        message: str,
+        status_code: Optional[int] = None,
+        error_code: Optional[str] = None,
+        category: Optional[ErrorCategory] = None,
+        guidance: Optional[str] = None,
+    ) -> None:
+        """
+        Initialize the ServiceUnavailableError.
+
+        Args:
+            message: Human-readable error message
+            status_code: HTTP status code (defaults to 503)
+            error_code: Optional short identifier for the error type
+            category: Optional error category
+            guidance: Optional actionable guidance
+        """
+        # Default status code to 503 if not provided
+        if status_code is None:
+            status_code = 503
+        super().__init__(message, status_code, error_code, category, guidance)
