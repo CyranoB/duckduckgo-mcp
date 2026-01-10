@@ -14,9 +14,16 @@ from urllib.parse import quote, urlparse
 import requests
 
 from .exceptions import ConnectionError as MCPConnectionError
-from .exceptions import (ContentParsingError, DNSError, HTTPError,
-                         InvalidURLError, MCPError, NetworkError,
-                         RateLimitError, ServiceUnavailableError)
+from .exceptions import (
+    ContentParsingError,
+    DNSError,
+    HTTPError,
+    InvalidURLError,
+    MCPError,
+    NetworkError,
+    RateLimitError,
+    ServiceUnavailableError,
+)
 from .exceptions import TimeoutError as MCPTimeoutError
 from .server import mcp
 
@@ -339,7 +346,15 @@ def fetch_url(
 
     Raises:
         InvalidURLError: If the URL is invalid (missing scheme, invalid format, etc.)
-        RuntimeError: If there is an error fetching or processing the content
+        MCPError: If there is a network, service, or other error fetching the content.
+            Specific subclasses include:
+            - TimeoutError: Request timed out
+            - ConnectionError: Could not connect to server
+            - DNSError: Could not resolve hostname
+            - HTTPError: Server returned an error status code
+            - RateLimitError: Too many requests (HTTP 429)
+            - ServiceUnavailableError: Service temporarily unavailable (HTTP 503)
+        ContentParsingError: If the response content cannot be parsed (e.g., invalid JSON)
     """
     _validate_url(url)
     headers = _build_headers(output_format, with_images)
@@ -351,9 +366,21 @@ def fetch_url(
         response.raise_for_status()
         return _process_response(response, output_format, max_length)
     except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"Error fetching URL ({url}): {str(e)}")
+        # Classify the request exception into a specific error type with actionable guidance
+        raise _classify_request_error(e, url=url) from e
     except json.JSONDecodeError as e:
-        raise RuntimeError(f"Error decoding JSON response: {str(e)}")
+        raise ContentParsingError(
+            f"Failed to decode JSON response for URL: {url}",
+            content_type="json",
+            guidance=(
+                "The server returned a response that could not be parsed as JSON. "
+                "This could mean:\n"
+                "  • The URL does not return valid JSON\n"
+                "  • The response was truncated or corrupted\n"
+                "  • Try using format='markdown' instead of 'json'\n"
+                "  • Verify the URL returns the expected content type"
+            ),
+        ) from e
 
 
 @mcp.tool()
