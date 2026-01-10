@@ -13,12 +13,168 @@ from urllib.parse import quote, urlparse
 
 import requests
 
+from .exceptions import (
+    ConnectionError as MCPConnectionError,
+    ContentParsingError,
+    DNSError,
+    HTTPError,
+    MCPError,
+    NetworkError,
+    RateLimitError,
+    ServiceUnavailableError,
+    TimeoutError as MCPTimeoutError,
+)
 from .server import mcp
 
 logger = logging.getLogger(__name__)
 
 # Jina Reader API base URL
 JINA_READER_BASE_URL = "https://r.jina.ai/"
+
+
+def _classify_request_error(
+    error: requests.exceptions.RequestException, url: Optional[str] = None
+) -> MCPError:
+    """
+    Classify a requests exception into a specific custom exception type.
+
+    This function analyzes the type and content of a requests exception to
+    determine the most appropriate custom exception to raise, providing
+    users with actionable guidance specific to their error.
+
+    Args:
+        error: The requests exception to classify
+        url: Optional URL that was being fetched (for error context)
+
+    Returns:
+        An appropriate MCPError subclass instance with actionable guidance
+    """
+    url_context = f" for URL: {url}" if url else ""
+
+    # Handle timeout errors
+    if isinstance(error, requests.exceptions.Timeout):
+        return MCPTimeoutError(
+            f"Request timed out{url_context}. The server took too long to respond."
+        )
+
+    # Handle SSL/TLS errors (must be checked before ConnectionError as SSLError inherits from it)
+    if isinstance(error, requests.exceptions.SSLError):
+        return NetworkError(
+            f"SSL/TLS error{url_context}. Could not establish a secure connection.",
+            guidance=(
+                "There was a problem with the secure connection. This could mean:\n"
+                "  • The server's SSL certificate is invalid or expired\n"
+                "  • There's a certificate chain issue\n"
+                "  • A proxy or firewall is interfering with the connection\n"
+                "Verify the URL uses a valid SSL certificate."
+            ),
+        )
+
+    # Handle connection errors (includes DNS errors)
+    if isinstance(error, requests.exceptions.ConnectionError):
+        error_str = str(error).lower()
+        # Check for DNS resolution failures
+        if any(
+            indicator in error_str
+            for indicator in [
+                "nodename nor servname provided",
+                "name or service not known",
+                "getaddrinfo failed",
+                "failed to resolve",
+                "dns",
+                "temporary failure in name resolution",
+            ]
+        ):
+            return DNSError(
+                f"Could not resolve hostname{url_context}. "
+                "The domain name could not be found."
+            )
+        # Generic connection error
+        return MCPConnectionError(
+            f"Connection failed{url_context}. "
+            "Unable to establish a connection to the server."
+        )
+
+    # Handle HTTP errors with status codes
+    if isinstance(error, requests.exceptions.HTTPError):
+        response = error.response
+        status_code = response.status_code if response is not None else None
+
+        if status_code == 429:
+            # Rate limiting - check for Retry-After header
+            retry_after = None
+            if response is not None:
+                retry_after_header = response.headers.get("Retry-After")
+                if retry_after_header:
+                    try:
+                        retry_after = int(retry_after_header)
+                    except ValueError:
+                        pass
+            return RateLimitError(
+                f"Rate limited{url_context}. Too many requests to the service.",
+                retry_after=retry_after,
+                status_code=status_code,
+            )
+
+        if status_code == 503:
+            return ServiceUnavailableError(
+                f"Service unavailable{url_context}. The server is temporarily unavailable.",
+                status_code=status_code,
+            )
+
+        if status_code == 404:
+            return HTTPError(
+                f"Not found{url_context}. The requested resource does not exist.",
+                status_code=status_code,
+                guidance=(
+                    "The URL may be incorrect or the page may have been removed.\n"
+                    "  • Verify the URL is correct\n"
+                    "  • Check if the page has moved to a new location\n"
+                    "  • Ensure the resource still exists"
+                ),
+            )
+
+        if status_code == 403:
+            return HTTPError(
+                f"Access forbidden{url_context}. You don't have permission to access this resource.",
+                status_code=status_code,
+                guidance=(
+                    "The server refused to grant access. This could mean:\n"
+                    "  • The resource requires authentication\n"
+                    "  • Your IP may be blocked\n"
+                    "  • The site restricts automated access\n"
+                    "Try accessing the URL directly in a browser to verify."
+                ),
+            )
+
+        if status_code and 500 <= status_code < 600:
+            return HTTPError(
+                f"Server error{url_context}. The server encountered an internal error.",
+                status_code=status_code,
+                guidance=(
+                    "The server experienced an error while processing the request.\n"
+                    "  • Wait a few moments and try again\n"
+                    "  • The issue is on the server side, not your request\n"
+                    "  • Check if the service has a status page for outage information"
+                ),
+            )
+
+        # Generic HTTP error
+        return HTTPError(
+            f"HTTP error{url_context}: {status_code}",
+            status_code=status_code,
+        )
+
+    # Generic network error for any other RequestException
+    return NetworkError(
+        f"Network error{url_context}: {str(error)}",
+        guidance=(
+            "An unexpected network error occurred. Please:\n"
+            "  • Check your internet connection\n"
+            "  • Verify the URL is correct\n"
+            "  • Try again in a few moments"
+        ),
+    )
 
 
 def _validate_url(url: str) -> None:
