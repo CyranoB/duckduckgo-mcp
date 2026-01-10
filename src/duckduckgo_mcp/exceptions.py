@@ -334,3 +334,136 @@ class ServiceUnavailableError(HTTPError):
         if status_code is None:
             status_code = 503
         super().__init__(message, status_code, error_code, category, guidance)
+
+
+# =============================================================================
+# Validation-Related Exceptions
+# =============================================================================
+
+
+class ValidationError(MCPError):
+    """
+    Base exception for input validation errors.
+
+    Raised when user-provided input fails validation checks,
+    such as missing required parameters, invalid formats, or out-of-range values.
+    """
+
+    error_code: str = "VALIDATION_ERROR"
+    category: ErrorCategory = ErrorCategory.VALIDATION
+    default_guidance: str = (
+        "The provided input is invalid. Please check:\n"
+        "  • All required parameters are provided\n"
+        "  • Values are in the expected format\n"
+        "  • Values are within acceptable ranges\n"
+        "Refer to the documentation for valid input examples."
+    )
+
+
+class InvalidURLError(ValidationError):
+    """
+    Exception for URL format validation errors.
+
+    Raised when a provided URL is malformed, missing required components
+    (like scheme or host), or otherwise invalid.
+    """
+
+    error_code: str = "INVALID_URL"
+    default_guidance: str = (
+        "The provided URL is invalid. Please ensure:\n"
+        "  • URL starts with http:// or https://\n"
+        "  • URL contains a valid domain name\n"
+        "  • URL has no invalid characters or spaces\n"
+        "Example valid URLs:\n"
+        "  • https://example.com\n"
+        "  • https://www.example.com/page\n"
+        "  • https://example.com/path?query=value"
+    )
+
+    def __init__(
+        self,
+        message: str,
+        url: Optional[str] = None,
+        error_code: Optional[str] = None,
+        category: Optional[ErrorCategory] = None,
+        guidance: Optional[str] = None,
+    ) -> None:
+        """
+        Initialize the InvalidURLError.
+
+        Args:
+            message: Human-readable error message describing the URL issue
+            url: The invalid URL that caused the error (for reference)
+            error_code: Optional short identifier for the error type
+            category: Optional error category
+            guidance: Optional actionable guidance
+        """
+        self.url = url
+        super().__init__(message, error_code, category, guidance)
+
+    def __repr__(self) -> str:
+        """Return a detailed representation of the error."""
+        return (
+            f"{self.__class__.__name__}("
+            f"message={self.message!r}, "
+            f"url={self.url!r}, "
+            f"error_code={self.error_code!r}, "
+            f"category={self.category!r}, "
+            f"guidance={self.guidance!r})"
+        )
+
+
+# =============================================================================
+# Content-Related Exceptions
+# =============================================================================
+
+
+class ContentParsingError(MCPError):
+    """
+    Exception for content parsing errors.
+
+    Raised when the response content cannot be parsed as expected,
+    such as invalid JSON, unexpected format, or encoding issues.
+    """
+
+    error_code: str = "CONTENT_PARSE_ERROR"
+    category: ErrorCategory = ErrorCategory.CONTENT
+    default_guidance: str = (
+        "Failed to parse the response content. This could be due to:\n"
+        "  • The server returned unexpected content format\n"
+        "  • The response was truncated or corrupted\n"
+        "  • Character encoding issues\n"
+        "Try the request again, or try a different URL if the problem persists."
+    )
+
+    def __init__(
+        self,
+        message: str,
+        content_type: Optional[str] = None,
+        error_code: Optional[str] = None,
+        category: Optional[ErrorCategory] = None,
+        guidance: Optional[str] = None,
+    ) -> None:
+        """
+        Initialize the ContentParsingError.
+
+        Args:
+            message: Human-readable error message describing the parsing issue
+            content_type: The content type that failed to parse (e.g., 'json', 'html')
+            error_code: Optional short identifier for the error type
+            category: Optional error category
+            guidance: Optional actionable guidance
+        """
+        self.content_type = content_type
+        super().__init__(message, error_code, category, guidance)
+
+    def __repr__(self) -> str:
+        """Return a detailed representation of the error."""
+        return (
+            f"{self.__class__.__name__}("
+            f"message={self.message!r}, "
+            f"content_type={self.content_type!r}, "
+            f"error_code={self.error_code!r}, "
+            f"category={self.category!r}, "
+            f"guidance={self.guidance!r})"
+        )
