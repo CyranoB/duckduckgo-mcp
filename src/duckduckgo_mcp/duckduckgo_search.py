@@ -12,8 +12,7 @@ from typing import Dict, List, Optional, Union
 from ddgs import DDGS
 from ddgs.exceptions import DDGSException
 
-from .exceptions import (MCPError, NetworkError, RateLimitError,
-                         ServiceUnavailableError)
+from .exceptions import MCPError, NetworkError, RateLimitError, ServiceUnavailableError
 from .exceptions import TimeoutError as MCPTimeoutError
 from .exceptions import ValidationError
 from .server import mcp
@@ -463,29 +462,102 @@ def duckduckgo_search(
 
     Returns:
         List of search results (json) or formatted string (text)
+
+    Raises:
+        ValidationError: If parameters are invalid (invalid query, max_results, or output_format)
+        MCPError: If there's a network, service, or rate limiting error during search
     """
+    # Validate 'query' parameter
+    if not query:
+        raise ValidationError(
+            "Missing required parameter: query",
+            guidance=(
+                "The 'query' parameter is required. Please provide a search query.\n"
+                "Example: duckduckgo_search(query='python web scraping tutorial')"
+            ),
+        )
+
     # Type coercion for MCP clients that may pass strings
     if not isinstance(max_results, int):
         try:
             max_results = int(max_results)
         except (ValueError, TypeError):
-            raise ValueError("max_results must be a valid positive integer")
+            raise ValidationError(
+                f"Invalid max_results: '{max_results}'. max_results must be a positive integer.",
+                guidance=(
+                    "The 'max_results' parameter must be a valid positive integer.\n"
+                    "  • Valid values: 1, 5, 10, 20, etc.\n"
+                    "  • Default value is 5 if not specified\n"
+                    f"You provided: '{max_results}' (type: {type(max_results).__name__})"
+                ),
+            )
+
+    # Validate max_results range
+    if max_results <= 0:
+        raise ValidationError(
+            f"Invalid max_results: {max_results}. max_results must be a positive integer.",
+            guidance=(
+                "The 'max_results' parameter must be a positive integer.\n"
+                "  • Valid values: 1, 5, 10, 20, etc.\n"
+                "  • Default value is 5 if not specified\n"
+                f"You provided: {max_results}"
+            ),
+        )
 
     # Validate output_format
     output_format = output_format.lower() if output_format else "json"
     if output_format not in ("json", "text"):
-        logger.warning(
-            f"Invalid output_format: '{output_format}'. Using 'json' instead."
+        raise ValidationError(
+            f"Invalid output_format: '{output_format}'. output_format must be 'json' or 'text'.",
+            guidance=(
+                "The 'output_format' parameter accepts two values:\n"
+                "  • 'json' (default) - Returns results as a list of dictionaries\n"
+                "  • 'text' - Returns results as LLM-friendly formatted text\n"
+                f"You provided: '{output_format}'"
+            ),
         )
-        output_format = "json"
 
-    results = search_duckduckgo(query, max_results, safesearch)
+    # Log the request at debug level
+    logger.debug(
+        f"duckduckgo_search called: query={query!r}, max_results={max_results!r}, "
+        f"safesearch={safesearch!r}, output_format={output_format!r}"
+    )
 
-    if not results:
-        logger.warning(f"No results found for query: '{query}'")
+    try:
+        results = search_duckduckgo(query, max_results, safesearch)
 
-    # Return based on output format
-    if output_format == "text":
-        return _format_results_as_text(results, query)
+        if not results:
+            logger.warning(
+                f"No results found for query: '{query}' with safesearch={safesearch}, "
+                f"max_results={max_results}"
+            )
+        else:
+            logger.debug(
+                f"duckduckgo_search successful: {len(results)} results for query '{query}'"
+            )
 
-    return results
+        # Return based on output format
+        if output_format == "text":
+            return _format_results_as_text(results, query)
+
+        return results
+
+    except MCPError as e:
+        # Log the error with appropriate level based on category
+        if e.category.value == "network":
+            logger.warning(f"Network error searching for '{query}': {e.message}")
+        elif e.category.value == "service":
+            logger.warning(f"Service error searching for '{query}': {e.message}")
+        elif e.category.value == "validation":
+            logger.info(f"Validation error for search '{query}': {e.message}")
+        else:
+            logger.error(f"Error searching for '{query}': {e.message}")
+        # Re-raise to propagate the actionable error message
+        raise
+    except Exception as e:
+        # Log unexpected errors at error level with full context
+        logger.error(
+            f"Unexpected error searching for '{query}' "
+            f"(max_results={max_results}, safesearch={safesearch}): {e}"
+        )
+        raise
