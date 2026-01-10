@@ -12,8 +12,13 @@ import traceback
 from typing import Callable, Dict, List, Union
 
 from .duckduckgo_search import duckduckgo_search
-from .exceptions import (ConfigurationError, DependencyError, MCPError,
-                         PortBindingError, ServerStartupError)
+from .exceptions import (
+    ConfigurationError,
+    DependencyError,
+    MCPError,
+    PortBindingError,
+    ServerStartupError,
+)
 from .jina_fetch import fetch_url
 from .server import mcp
 

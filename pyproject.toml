@@ -60,3 +60,15 @@ include = ["duckduckgo_mcp", "duckduckgo_mcp.*"]
 write_to = "src/duckduckgo_mcp/_version.py"
 version_scheme = "post-release"
 local_scheme = "no-local-version"  # This removes the local version component
+
+[tool.black]
+extend-exclude = "_version.py"
+
+[tool.isort]
+profile = "black"
+extend_skip = ["_version.py"]
+
+[tool.mypy]
+exclude = ["_version.py"]
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]

@@ -711,14 +711,13 @@ class TestFetchUrlErrors:
 class TestJinaFetchToolErrors:
     """Tests for error handling in the jina_fetch MCP tool.
 
-    Note: jina_fetch is wrapped by @mcp.tool() decorator, so we access
-    the underlying function via jina_fetch.fn to test it directly.
+    Note: jina_fetch decorated with @mcp.tool() is a regular function.
     """
 
     def test_jina_fetch_raises_validation_error_for_missing_url(self) -> None:
         """Test jina_fetch raises ValidationError for missing URL."""
         with pytest.raises(ValidationError) as exc_info:
-            jina_fetch.fn(url="")
+            jina_fetch(url="")
 
         assert "url" in exc_info.value.message.lower()
         assert exc_info.value.category == ErrorCategory.VALIDATION
@@ -726,7 +725,7 @@ class TestJinaFetchToolErrors:
     def test_jina_fetch_raises_validation_error_for_invalid_format(self) -> None:
         """Test jina_fetch raises ValidationError for invalid format."""
         with pytest.raises(ValidationError) as exc_info:
-            jina_fetch.fn(url="https://example.com", format="xml")
+            jina_fetch(url="https://example.com", format="xml")
 
         assert "format" in exc_info.value.message.lower()
         assert "markdown" in exc_info.value.guidance
@@ -735,7 +734,7 @@ class TestJinaFetchToolErrors:
     def test_jina_fetch_raises_validation_error_for_negative_max_length(self) -> None:
         """Test jina_fetch raises ValidationError for negative max_length."""
         with pytest.raises(ValidationError) as exc_info:
-            jina_fetch.fn(url="https://example.com", max_length=-100)
+            jina_fetch(url="https://example.com", max_length=-100)
 
         assert "max_length" in exc_info.value.message.lower()
         assert "positive" in exc_info.value.guidance.lower()
@@ -743,7 +742,7 @@ class TestJinaFetchToolErrors:
     def test_jina_fetch_raises_validation_error_for_zero_max_length(self) -> None:
         """Test jina_fetch raises ValidationError for zero max_length."""
         with pytest.raises(ValidationError) as exc_info:
-            jina_fetch.fn(url="https://example.com", max_length=0)
+            jina_fetch(url="https://example.com", max_length=0)
 
         assert "max_length" in exc_info.value.message.lower()
 
@@ -752,7 +751,7 @@ class TestJinaFetchToolErrors:
     ) -> None:
         """Test jina_fetch raises ValidationError for non-numeric max_length."""
         with pytest.raises(ValidationError) as exc_info:
-            jina_fetch.fn(url="https://example.com", max_length="abc")  # type: ignore
+            jina_fetch(url="https://example.com", max_length="abc")  # type: ignore
 
         assert "max_length" in exc_info.value.message.lower()
         assert "number" in exc_info.value.guidance.lower()
@@ -760,7 +759,7 @@ class TestJinaFetchToolErrors:
     def test_jina_fetch_raises_invalid_url_error_for_bad_url(self) -> None:
         """Test jina_fetch raises InvalidURLError for invalid URL format."""
         with pytest.raises(InvalidURLError):
-            jina_fetch.fn(url="not-a-valid-url")
+            jina_fetch(url="not-a-valid-url")
 
     @patch("duckduckgo_mcp.jina_fetch.fetch_url")
     def test_jina_fetch_propagates_mcp_error(self, mock_fetch: MagicMock) -> None:
@@ -768,7 +767,7 @@ class TestJinaFetchToolErrors:
         mock_fetch.side_effect = MCPTimeoutError("Request timed out")
 
         with pytest.raises(MCPTimeoutError):
-            jina_fetch.fn(url="https://example.com")
+            jina_fetch(url="https://example.com")
 
     @patch("duckduckgo_mcp.jina_fetch.fetch_url")
     def test_jina_fetch_propagates_rate_limit_error(
@@ -778,7 +777,7 @@ class TestJinaFetchToolErrors:
         mock_fetch.side_effect = RateLimitError("Too many requests", retry_after=60)
 
         with pytest.raises(RateLimitError) as exc_info:
-            jina_fetch.fn(url="https://example.com")
+            jina_fetch(url="https://example.com")
 
         assert exc_info.value.retry_after == 60
 

@@ -738,14 +738,13 @@ class TestSearchDuckduckgoErrors:
 class TestDuckduckgoSearchToolErrors:
     """Tests for error handling in the duckduckgo_search MCP tool.
 
-    Note: duckduckgo_search is wrapped by @mcp.tool() decorator, so we access
-    the underlying function via duckduckgo_search.fn to test it directly.
+    Note: duckduckgo_search decorated with @mcp.tool() is a regular function.
     """
 
     def test_missing_query_raises_validation_error(self) -> None:
         """Test that missing query raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            duckduckgo_search.fn(query="")
+            duckduckgo_search(query="")
 
         assert "query" in exc_info.value.message.lower()
         assert exc_info.value.category == ErrorCategory.VALIDATION
@@ -753,14 +752,14 @@ class TestDuckduckgoSearchToolErrors:
     def test_missing_query_has_actionable_guidance(self) -> None:
         """Test that missing query error has actionable guidance."""
         with pytest.raises(ValidationError) as exc_info:
-            duckduckgo_search.fn(query="")
+            duckduckgo_search(query="")
 
         assert "example" in exc_info.value.guidance.lower()
 
     def test_invalid_max_results_string_raises_validation_error(self) -> None:
         """Test that non-convertible max_results string raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            duckduckgo_search.fn(query="test", max_results="not_a_number")  # type: ignore
+            duckduckgo_search(query="test", max_results="not_a_number")  # type: ignore
 
         assert "max_results" in exc_info.value.message.lower()
 
@@ -769,27 +768,27 @@ class TestDuckduckgoSearchToolErrors:
         with patch("duckduckgo_mcp.duckduckgo_search.search_duckduckgo") as mock_search:
             mock_search.return_value = []
             # This should work - "5" should be converted to 5
-            duckduckgo_search.fn(query="test", max_results="5")  # type: ignore
+            duckduckgo_search(query="test", max_results="5")  # type: ignore
             mock_search.assert_called_once()
 
     def test_zero_max_results_raises_validation_error(self) -> None:
         """Test that zero max_results raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            duckduckgo_search.fn(query="test", max_results=0)
+            duckduckgo_search(query="test", max_results=0)
 
         assert "max_results" in exc_info.value.message.lower()
 
     def test_negative_max_results_raises_validation_error(self) -> None:
         """Test that negative max_results raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            duckduckgo_search.fn(query="test", max_results=-5)
+            duckduckgo_search(query="test", max_results=-5)
 
         assert "max_results" in exc_info.value.message.lower()
 
     def test_invalid_output_format_raises_validation_error(self) -> None:
         """Test that invalid output_format raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            duckduckgo_search.fn(query="test", output_format="xml")
+            duckduckgo_search(query="test", output_format="xml")
 
         assert "output_format" in exc_info.value.message.lower()
         assert "json" in exc_info.value.guidance.lower()
@@ -798,7 +797,7 @@ class TestDuckduckgoSearchToolErrors:
     def test_invalid_output_format_shows_provided_value(self) -> None:
         """Test that invalid output_format error shows the provided value."""
         with pytest.raises(ValidationError) as exc_info:
-            duckduckgo_search.fn(query="test", output_format="invalid_format")
+            duckduckgo_search(query="test", output_format="invalid_format")
 
         assert "invalid_format" in exc_info.value.guidance
 
@@ -808,7 +807,7 @@ class TestDuckduckgoSearchToolErrors:
         mock_search.side_effect = RateLimitError("Rate limited")
 
         with pytest.raises(RateLimitError):
-            duckduckgo_search.fn(query="test")
+            duckduckgo_search(query="test")
 
     @patch("duckduckgo_mcp.duckduckgo_search.search_duckduckgo")
     def test_network_error_propagates(self, mock_search: MagicMock) -> None:
@@ -816,7 +815,7 @@ class TestDuckduckgoSearchToolErrors:
         mock_search.side_effect = NetworkError("Network issue")
 
         with pytest.raises(NetworkError):
-            duckduckgo_search.fn(query="test")
+            duckduckgo_search(query="test")
 
     @patch("duckduckgo_mcp.duckduckgo_search.search_duckduckgo")
     def test_successful_json_output(self, mock_search: MagicMock) -> None:
@@ -825,7 +824,7 @@ class TestDuckduckgoSearchToolErrors:
             {"title": "Result", "url": "https://example.com", "snippet": "desc"}
         ]
 
-        result = duckduckgo_search.fn(query="test")
+        result = duckduckgo_search(query="test")
 
         assert isinstance(result, list)
         assert len(result) == 1
@@ -838,7 +837,7 @@ class TestDuckduckgoSearchToolErrors:
             {"title": "Result", "url": "https://example.com", "snippet": "desc"}
         ]
 
-        result = duckduckgo_search.fn(query="test", output_format="text")
+        result = duckduckgo_search(query="test", output_format="text")
 
         assert isinstance(result, str)
         assert "Result" in result
@@ -911,7 +910,7 @@ class TestSearchErrorIntegration:
         mock_execute.side_effect = DDGSException("429 Rate Limited")
 
         with pytest.raises(MCPError) as exc_info:
-            duckduckgo_search.fn(query="test")
+            duckduckgo_search(query="test")
 
         # Should be a RateLimitError with proper category
         assert isinstance(exc_info.value, RateLimitError)
@@ -944,7 +943,7 @@ class TestSearchErrorIntegration:
         """Test that validation errors prevent search from being executed."""
         with patch("duckduckgo_mcp.duckduckgo_search._execute_search") as mock:
             with pytest.raises(ValidationError):
-                duckduckgo_search.fn(query="")
+                duckduckgo_search(query="")
 
             # Search should never be called due to validation failure
             mock.assert_not_called()
