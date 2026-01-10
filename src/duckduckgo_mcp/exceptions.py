@@ -86,3 +86,78 @@ class MCPError(Exception):
             f"category={self.category!r}, "
             f"guidance={self.guidance!r})"
         )
+
+
+# =============================================================================
+# Network-Related Exceptions
+# =============================================================================
+
+
+class NetworkError(MCPError):
+    """
+    Base exception for network-related errors.
+
+    Raised when there are issues with network connectivity, DNS resolution,
+    timeouts, or other network-level problems.
+    """
+
+    error_code: str = "NETWORK_ERROR"
+    category: ErrorCategory = ErrorCategory.NETWORK
+    default_guidance: str = (
+        "Check your internet connection and try again. "
+        "If the problem persists, the remote server may be temporarily unavailable."
+    )
+
+
+class ConnectionError(NetworkError):
+    """
+    Exception for connection refused or reset errors.
+
+    Raised when a TCP connection cannot be established because the remote
+    server refused the connection or the connection was reset.
+    """
+
+    error_code: str = "CONNECTION_ERROR"
+    default_guidance: str = (
+        "The connection was refused or reset. This could mean:\n"
+        "  • The server is not accepting connections\n"
+        "  • A firewall is blocking the request\n"
+        "  • The server is overloaded\n"
+        "Try again in a few moments, or check if the service is available."
+    )
+
+
+class TimeoutError(NetworkError):
+    """
+    Exception for request timeout errors.
+
+    Raised when a request takes too long to complete and exceeds
+    the configured timeout threshold.
+    """
+
+    error_code: str = "TIMEOUT_ERROR"
+    default_guidance: str = (
+        "The request timed out waiting for a response. This could be due to:\n"
+        "  • Slow network connection\n"
+        "  • Server under heavy load\n"
+        "  • Large response size\n"
+        "Try again later, or check your network connection."
+    )
+
+
+class DNSError(NetworkError):
+    """
+    Exception for DNS resolution failures.
+
+    Raised when the hostname cannot be resolved to an IP address,
+    indicating either an invalid hostname or DNS configuration issues.
+    """
+
+    error_code: str = "DNS_ERROR"
+    default_guidance: str = (
+        "Could not resolve the hostname. Please check:\n"
+        "  • The URL is spelled correctly\n"
+        "  • Your DNS settings are working\n"
+        "  • The domain exists and is accessible\n"
+        "Try using a different DNS server or verify the URL."
+    )
