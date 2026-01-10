@@ -12,7 +12,8 @@ from typing import Dict, List, Optional, Union
 from ddgs import DDGS
 from ddgs.exceptions import DDGSException
 
-from .exceptions import MCPError, NetworkError, RateLimitError, ServiceUnavailableError
+from .exceptions import (MCPError, NetworkError, RateLimitError,
+                         ServiceUnavailableError)
 from .exceptions import TimeoutError as MCPTimeoutError
 from .exceptions import ValidationError
 from .server import mcp
@@ -254,7 +255,7 @@ def _try_fallback_search(
     safesearch: str,
     max_results: int,
     timeout: int,
-    original_error: Exception,
+    original_error: MCPError,
 ) -> List[Dict[str, str]]:
     """
     Attempt a fallback search using the brave backend.
@@ -265,21 +266,73 @@ def _try_fallback_search(
         safesearch: Safe search setting
         max_results: Maximum number of results
         timeout: Request timeout in seconds
-        original_error: The original exception that triggered the fallback
+        original_error: The classified exception that triggered the fallback
 
     Returns:
-        List of formatted search results, or empty list on failure
-    """
-    # Don't retry if the error was already about the backend
-    if "backend" in str(original_error).lower():
-        return []
+        List of formatted search results
 
-    logger.info("Retrying with brave backend as fallback")
+    Raises:
+        MCPError: If both primary and fallback searches fail, with context about both attempts
+    """
+    # Don't retry if the error was already about the backend or rate limiting
+    # Rate limiting typically affects all backends from the same IP
+    if isinstance(original_error, RateLimitError):
+        logger.warning(
+            f"Skipping fallback search due to rate limiting: {original_error.message}"
+        )
+        raise original_error
+
+    if "backend" in original_error.message.lower():
+        logger.warning("Skipping fallback - original error was backend-specific")
+        raise original_error
+
+    logger.info("Primary search failed, retrying with brave backend as fallback")
     try:
-        return _execute_search(query, region, safesearch, max_results, timeout, "brave")
-    except Exception as e:
-        logger.error(f"Fallback search failed: {str(e)}")
-        return []
+        results = _execute_search(
+            query, region, safesearch, max_results, timeout, "brave"
+        )
+        logger.debug(f"Fallback search succeeded with {len(results)} results")
+        return results
+    except DDGSException as fallback_e:
+        fallback_error = _classify_search_error(fallback_e, query, "brave")
+        logger.warning(
+            f"Fallback search also failed: {fallback_error.message}. "
+            f"Original error: {original_error.message}"
+        )
+        # Raise a combined error with context about both attempts
+        raise NetworkError(
+            f"Search failed with both backends. "
+            f"Primary (duckduckgo): {original_error.message}. "
+            f"Fallback (brave): {fallback_error.message}",
+            guidance=(
+                "Both search backends failed. This could indicate:\n"
+                "  • DuckDuckGo may be experiencing widespread issues\n"
+                "  • Your network connection may be unstable\n"
+                "  • You may be rate limited across backends\n"
+                "Please try:\n"
+                "  • Waiting a few minutes before trying again\n"
+                "  • Checking your internet connection\n"
+                "  • Simplifying your search query"
+            ),
+        ) from fallback_e
+    except Exception as fallback_e:
+        fallback_error = _classify_search_error(fallback_e, query, "brave")
+        logger.error(
+            f"Unexpected fallback error: {fallback_error.message}. "
+            f"Original error: {original_error.message}"
+        )
+        raise NetworkError(
+            f"Search failed unexpectedly. "
+            f"Primary error: {original_error.message}. "
+            f"Fallback error: {str(fallback_e)}",
+            guidance=(
+                "An unexpected error occurred during search. Please:\n"
+                "  • Check your internet connection\n"
+                "  • Wait a moment and try again\n"
+                "  • Try a different search query\n"
+                "If the problem persists, DuckDuckGo may be experiencing issues."
+            ),
+        ) from fallback_e
 
 
 def _validate_search_params(query: str, max_results: int, safesearch: str) -> str:
@@ -295,13 +348,29 @@ def _validate_search_params(query: str, max_results: int, safesearch: str) -> st
         Normalized safesearch value
 
     Raises:
-        ValueError: If query or max_results is invalid
+        ValidationError: If query or max_results is invalid
     """
     if not query or not isinstance(query, str):
-        raise ValueError("Query must be a non-empty string")
+        raise ValidationError(
+            "Search query is required and must be a non-empty string.",
+            guidance=(
+                "Please provide a valid search query:\n"
+                "  • The query must be a text string\n"
+                "  • The query cannot be empty\n"
+                "Example: 'python web scraping tutorial'"
+            ),
+        )
 
     if not isinstance(max_results, int) or max_results <= 0:
-        raise ValueError("max_results must be a positive integer")
+        raise ValidationError(
+            f"Invalid max_results value: {max_results!r}. Must be a positive integer.",
+            guidance=(
+                "The max_results parameter must be a positive integer:\n"
+                "  • Valid values: 1, 5, 10, 20, etc.\n"
+                "  • Default value is 5 if not specified\n"
+                "Example: max_results=10"
+            ),
+        )
 
     valid_safesearch = ["on", "moderate", "off"]
     if safesearch not in valid_safesearch:
@@ -332,19 +401,47 @@ def search_duckduckgo(
 
     Returns:
         List of dictionaries containing search results with title, url, and snippet
+
+    Raises:
+        MCPError: If search fails with actionable guidance for the user
+        ValidationError: If search parameters are invalid
     """
     safesearch = _validate_search_params(query, max_results, safesearch)
 
     try:
-        return _execute_search(
+        logger.debug(
+            f"Executing search: query='{query}', max_results={max_results}, "
+            f"safesearch={safesearch}, region={region}"
+        )
+        results = _execute_search(
             query, region, safesearch, max_results, timeout, "duckduckgo"
         )
+        logger.debug(f"Search completed successfully with {len(results)} results")
+        return results
     except DDGSException as e:
-        logger.error(f"DuckDuckGo search error: {str(e)}")
-        return _try_fallback_search(query, region, safesearch, max_results, timeout, e)
+        # Classify the error for actionable guidance
+        classified_error = _classify_search_error(e, query, "duckduckgo")
+
+        # Log with appropriate level based on error type
+        if isinstance(classified_error, RateLimitError):
+            logger.warning(f"Rate limited: {classified_error.message}")
+        elif isinstance(classified_error, (MCPTimeoutError, NetworkError)):
+            logger.warning(f"Network issue: {classified_error.message}")
+        else:
+            logger.error(f"Search error: {classified_error.message}")
+
+        # Attempt fallback search (will raise if both fail)
+        return _try_fallback_search(
+            query, region, safesearch, max_results, timeout, classified_error
+        )
+    except MCPError:
+        # Re-raise our custom exceptions as-is
+        raise
     except Exception as e:
-        logger.error(f"Unexpected error during search: {str(e)}")
-        return []
+        # Classify unexpected errors and raise with guidance
+        classified_error = _classify_search_error(e, query, "duckduckgo")
+        logger.error(f"Unexpected search error: {classified_error.message}")
+        raise classified_error from e
 
 
 @mcp.tool()
