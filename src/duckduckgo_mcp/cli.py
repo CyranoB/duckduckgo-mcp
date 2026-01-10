@@ -8,11 +8,95 @@ import argparse
 import json
 import logging
 import sys
+import traceback
 from typing import Callable, Dict, List, Union
 
 from .duckduckgo_search import duckduckgo_search
+from .exceptions import MCPError
 from .jina_fetch import fetch_url
 from .server import mcp
+
+
+def _format_error(error: Exception, debug: bool = False) -> str:
+    """
+    Format an error for consistent CLI output.
+
+    Provides user-friendly error display with actionable guidance in normal mode,
+    and full details including traceback in debug mode.
+
+    Args:
+        error: The exception to format
+        debug: If True, include full traceback and technical details
+
+    Returns:
+        Formatted error string ready for display to the user
+    """
+    lines = []
+
+    if isinstance(error, MCPError):
+        # For MCPError and subclasses, use the structured information
+        category_label = error.category.value.upper()
+        error_code = error.error_code
+
+        # Build header with category and error code
+        lines.append(f"Error [{category_label}:{error_code}]")
+        lines.append("")
+
+        # Add the main error message
+        lines.append(f"  {error.message}")
+        lines.append("")
+
+        # Add actionable guidance
+        lines.append("What to do:")
+        # Indent each line of guidance for readability
+        for guidance_line in error.guidance.split("\n"):
+            lines.append(f"  {guidance_line}")
+
+        if debug:
+            lines.append("")
+            lines.append("Debug Information:")
+            lines.append(f"  Exception type: {type(error).__name__}")
+            lines.append(f"  Error code: {error_code}")
+            lines.append(f"  Category: {error.category}")
+            lines.append("")
+            lines.append("Stack trace:")
+            # Get the traceback and indent each line
+            tb_lines = traceback.format_exception(
+                type(error), error, error.__traceback__
+            )
+            for tb_line in tb_lines:
+                for sub_line in tb_line.rstrip().split("\n"):
+                    lines.append(f"  {sub_line}")
+    else:
+        # For non-MCPError exceptions, provide generic formatting
+        error_type = type(error).__name__
+        error_message = str(error) if str(error) else "An unexpected error occurred"
+
+        lines.append(f"Error [{error_type}]")
+        lines.append("")
+        lines.append(f"  {error_message}")
+        lines.append("")
+
+        if debug:
+            lines.append("Debug Information:")
+            lines.append(f"  Exception type: {error_type}")
+            lines.append("")
+            lines.append("Stack trace:")
+            tb_lines = traceback.format_exception(
+                type(error), error, error.__traceback__
+            )
+            for tb_line in tb_lines:
+                for sub_line in tb_line.rstrip().split("\n"):
+                    lines.append(f"  {sub_line}")
+        else:
+            # In normal mode, provide generic guidance for unexpected errors
+            lines.append("What to do:")
+            lines.append(
+                "  Please try again. If the problem persists, run with --debug"
+            )
+            lines.append("  for more details, or report this issue.")
+
+    return "\n".join(lines)
 
 
 def _handle_version(args: argparse.Namespace) -> int:
