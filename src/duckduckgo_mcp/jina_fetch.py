@@ -13,17 +13,11 @@ from urllib.parse import quote, urlparse
 
 import requests
 
-from .exceptions import (
-    ConnectionError as MCPConnectionError,
-    ContentParsingError,
-    DNSError,
-    HTTPError,
-    MCPError,
-    NetworkError,
-    RateLimitError,
-    ServiceUnavailableError,
-    TimeoutError as MCPTimeoutError,
-)
+from .exceptions import ConnectionError as MCPConnectionError
+from .exceptions import (ContentParsingError, DNSError, HTTPError,
+                         InvalidURLError, MCPError, NetworkError,
+                         RateLimitError, ServiceUnavailableError)
+from .exceptions import TimeoutError as MCPTimeoutError
 from .server import mcp
 
 logger = logging.getLogger(__name__)
@@ -185,16 +179,87 @@ def _validate_url(url: str) -> None:
         url: The URL to validate
 
     Raises:
-        ValueError: If the URL is invalid or uses unsupported scheme
+        InvalidURLError: If the URL is invalid or uses unsupported scheme
     """
+    # Check for empty or non-string URL
     if not url or not isinstance(url, str):
-        raise ValueError("URL must be a non-empty string")
+        raise InvalidURLError(
+            "URL must be a non-empty string.",
+            url=str(url) if url is not None else None,
+            guidance=(
+                "Please provide a valid URL as a string. For example:\n"
+                "  • https://example.com\n"
+                "  • https://www.example.com/page"
+            ),
+        )
 
-    parsed_url = urlparse(url)
-    if not parsed_url.scheme or not parsed_url.netloc:
-        raise ValueError("Invalid URL format")
+    # Strip whitespace and check again
+    url_stripped = url.strip()
+    if not url_stripped:
+        raise InvalidURLError(
+            "URL cannot be empty or contain only whitespace.",
+            url=url,
+            guidance=(
+                "Please provide a valid URL. For example:\n"
+                "  • https://example.com\n"
+                "  • https://www.example.com/page"
+            ),
+        )
+
+    # Check for spaces in URL (common mistake)
+    if " " in url_stripped:
+        raise InvalidURLError(
+            f"URL contains spaces: '{url_stripped}'",
+            url=url_stripped,
+            guidance=(
+                "URLs cannot contain spaces. If the URL has spaces, try:\n"
+                "  • Replacing spaces with %20 (URL encoding)\n"
+                "  • Removing the spaces entirely\n"
+                "  • Checking if you copied the full URL correctly"
+            ),
+        )
+
+    parsed_url = urlparse(url_stripped)
+
+    # Check for missing scheme (common mistake: "example.com" instead of "https://example.com")
+    if not parsed_url.scheme:
+        raise InvalidURLError(
+            f"URL is missing the scheme (http:// or https://): '{url_stripped}'",
+            url=url_stripped,
+            guidance=(
+                "URLs must start with http:// or https://. Did you mean:\n"
+                f"  • https://{url_stripped}\n"
+                "Example valid URLs:\n"
+                "  • https://example.com\n"
+                "  • http://localhost:8080"
+            ),
+        )
+
+    # Check for unsupported scheme (e.g., ftp://, file://, mailto:)
     if parsed_url.scheme not in ("http", "https"):
-        raise ValueError("Only HTTP/HTTPS URLs are supported")
+        raise InvalidURLError(
+            f"Unsupported URL scheme: '{parsed_url.scheme}'. Only HTTP and HTTPS are supported.",
+            url=url_stripped,
+            guidance=(
+                f"The scheme '{parsed_url.scheme}://' is not supported. Please use:\n"
+                "  • https:// (recommended for secure connections)\n"
+                "  • http:// (for non-secure connections)\n"
+                "Example: https://example.com"
+            ),
+        )
+
+    # Check for missing domain/netloc (e.g., "https:///path" or "https://")
+    if not parsed_url.netloc:
+        raise InvalidURLError(
+            f"URL is missing the domain name: '{url_stripped}'",
+            url=url_stripped,
+            guidance=(
+                "The URL must include a valid domain name after the scheme. For example:\n"
+                "  • https://example.com (domain is 'example.com')\n"
+                "  • https://www.example.com/page (domain is 'www.example.com')\n"
+                "Make sure the URL follows this format: https://domain.com/path"
+            ),
+        )
 
 
 def _build_headers(output_format: str, with_images: bool) -> Dict[str, str]:
@@ -273,7 +338,7 @@ def fetch_url(
         The fetched content as markdown string or JSON dict depending on output_format
 
     Raises:
-        ValueError: If the URL is invalid
+        InvalidURLError: If the URL is invalid (missing scheme, invalid format, etc.)
         RuntimeError: If there is an error fetching or processing the content
     """
     _validate_url(url)
