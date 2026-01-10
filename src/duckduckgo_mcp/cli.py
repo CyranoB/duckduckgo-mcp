@@ -126,6 +126,7 @@ def _handle_version(args: argparse.Namespace) -> int:
 
 def _handle_search(args: argparse.Namespace) -> int:
     """Handle the search command."""
+    debug = getattr(args, "debug", False)
     try:
         query = " ".join(args.query)
         output_format = getattr(args, "output_format", "json")
@@ -141,7 +142,14 @@ def _handle_search(args: argparse.Namespace) -> int:
         else:
             print(json.dumps(results, indent=2, ensure_ascii=False))
         return 0
+    except MCPError as e:
+        # Format and display actionable error message
+        print(_format_error(e, debug=debug), file=sys.stderr)
+        logging.debug(f"Search MCPError: {type(e).__name__}: {e.message}")
+        return 1
     except Exception as e:
+        # Handle unexpected errors with generic formatting
+        print(_format_error(e, debug=debug), file=sys.stderr)
         logging.error(f"Search error: {str(e)}")
         return 1
 
@@ -235,6 +243,9 @@ def _setup_parser() -> argparse.ArgumentParser:
         default="json",
         dest="output_format",
         help="Output format: 'json' for structured data, 'text' for LLM-friendly (default: json)",
+    )
+    search_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug output with full traceback"
     )
 
     # Fetch command
