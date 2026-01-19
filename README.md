@@ -1,10 +1,14 @@
 # DuckDuckGo MCP Server
 
+![Illustration of a determined scribe wielding a giant quill fighting a tangle of papers and monsters, with a duck in a cap at his side and stacks of documents and crates behind](assets/header.png)
+
 [![PyPI](https://img.shields.io/pypi/v/duckduckgo-mcp?style=flat-square)](https://pypi.org/project/duckduckgo-mcp/)
 [![Python Version](https://img.shields.io/pypi/pyversions/duckduckgo-mcp?style=flat-square)](https://pypi.org/project/duckduckgo-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Downloads](https://static.pepy.tech/badge/duckduckgo-mcp/month)](https://pepy.tech/project/duckduckgo-mcp)
 [![Smithery](https://smithery.ai/badge/@cyranob/duckduckgo-mcp)](https://smithery.ai/server/@cyranob/duckduckgo-mcp)
+
+*Most search engines are like wizards: impressive, vaguely alarming, and entirely uninterested in explaining themselves. This MCP server is more like a clerk at Unseen University—two services, no fuss: DuckDuckGo search and Jina-powered page fetches, neatly converted for LLM digestion. It will not save the world, but it will save you from copy-pasting it.*
 
 A Model Context Protocol (MCP) server that provides two capabilities:
 1) Search the web using DuckDuckGo
