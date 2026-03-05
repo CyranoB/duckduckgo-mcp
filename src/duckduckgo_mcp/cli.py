@@ -10,6 +10,7 @@ import logging
 import sys
 from typing import Callable, Dict, List, Union
 
+from .duckduckgo_news import duckduckgo_news_search
 from .duckduckgo_search import duckduckgo_search
 from .jina_fetch import fetch_url
 from .server import mcp
@@ -59,6 +60,28 @@ def _handle_search(args: argparse.Namespace) -> int:
         return 0
     except Exception as e:
         logging.error(f"Search error: {str(e)}")
+        return 1
+
+
+def _handle_news(args: argparse.Namespace) -> int:
+    """Handle the news command."""
+    try:
+        query = " ".join(args.query)
+        output_format = getattr(args, "output_format", "json")
+        results = duckduckgo_news_search(
+            query=query,
+            max_results=args.max_results,
+            safesearch=args.safesearch,
+            output_format=output_format,
+        )
+
+        if output_format == "text":
+            print(results)
+        else:
+            print(json.dumps(results, indent=2, ensure_ascii=False))
+        return 0
+    except Exception as e:
+        logging.error(f"News search error: {str(e)}")
         return 1
 
 
@@ -153,6 +176,26 @@ def _setup_parser() -> argparse.ArgumentParser:
         help="Output format: 'json' for structured data, 'text' for LLM-friendly (default: json)",
     )
 
+    # News command
+    news_parser = subparsers.add_parser("news", help="Search DuckDuckGo news directly")
+    news_parser.add_argument("query", nargs="+", help="News search query")
+    news_parser.add_argument(
+        "--max-results", type=int, default=10, help="Maximum number of results to return"
+    )
+    news_parser.add_argument(
+        "--safesearch",
+        choices=["on", "moderate", "off"],
+        default="moderate",
+        help="Safe search setting (default: moderate)",
+    )
+    news_parser.add_argument(
+        "--output-format",
+        choices=["json", "text"],
+        default="json",
+        dest="output_format",
+        help="Output format: 'json' for structured data, 'text' for LLM-friendly (default: json)",
+    )
+
     # Fetch command
     fetch_parser = subparsers.add_parser(
         "fetch", help="Fetch and convert content from a URL"
@@ -195,6 +238,7 @@ def main() -> int:
     handlers: Dict[str, Callable[[argparse.Namespace], int]] = {
         "version": _handle_version,
         "search": _handle_search,
+        "news": _handle_news,
         "fetch": _handle_fetch,
         "serve": _handle_serve,
     }

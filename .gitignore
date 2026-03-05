@@ -145,3 +145,14 @@ repl_state/
 config.ini
 *.log
 logs/
+
+# Auto Claude data directory
+.auto-claude/
+.automaker/
+
+# Auto Claude generated files
+.auto-claude-security.json
+.auto-claude-status
+.claude_settings.json
+.worktrees/
+.security-key

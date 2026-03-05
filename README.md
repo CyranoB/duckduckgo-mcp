@@ -111,6 +111,16 @@ duckduckgo-mcp search "your search query" --max-results 5 --safesearch moderate
 duckduckgo-mcp search "your search query" --output-format text
 ```
 
+### Testing the News Search Tool
+
+```bash
+# Search DuckDuckGo news (JSON output, default)
+duckduckgo-mcp news "your search query" --max-results 10 --safesearch moderate
+
+# Search with LLM-friendly text output
+duckduckgo-mcp news "your search query" --output-format text
+```
+
 ### Testing the Fetch Tool
 
 ```bash
@@ -247,6 +257,17 @@ def duckduckgo_search(
 
 ```python
 @mcp.tool()
+def duckduckgo_news_search(
+    query: str,
+    max_results: int = 10,
+    safesearch: str = "moderate",
+    output_format: str = "json"
+) -> list | str:
+    """Search DuckDuckGo for recent news articles."""
+```
+
+```python
+@mcp.tool()
 def jina_fetch(url: str, format: str = "markdown", max_length: int | None = None, with_images: bool = False) -> str | dict:
     """Fetch a URL and convert it using Jina Reader."""
 ```
@@ -256,6 +277,7 @@ Example usage in an MCP client:
 ```python
 # This is handled automatically by the MCP client
 results = duckduckgo_search("Python programming", max_results=3)
+news = duckduckgo_news_search("AI regulation 2026", max_results=5)
 content = jina_fetch("https://example.com", format="markdown")
 
 # Get LLM-friendly text output
@@ -304,7 +326,47 @@ Found 3 search results:
    Summary: Another snippet
 ```
 
-### Tool 2: Fetch
+### Tool 2: News Search
+
+- **Tool Name**: `duckduckgo_news_search`
+- **Description**: Search for recent news articles using DuckDuckGo (powered by the `ddgs` library)
+
+#### Parameters
+
+- `query` (string, required): The news search query
+- `max_results` (integer, optional, default: 10): Maximum number of news results to return
+- `safesearch` (string, optional, default: "moderate"): Safe search setting ("on", "moderate", or "off")
+- `output_format` (string, optional, default: "json"): Output format - "json" for structured data, "text" for LLM-friendly formatted string
+
+#### Response
+
+**JSON format** (default): A list of dictionaries:
+
+```json
+[
+  {
+    "title": "News headline",
+    "url": "https://example.com/article",
+    "snippet": "Article summary text",
+    "date": "2026-03-01T12:00:00+00:00",
+    "source": "News Outlet"
+  }
+]
+```
+
+**Text format**: An LLM-friendly formatted string:
+
+```
+Found 3 news results:
+
+1. News headline
+   URL: https://example.com/article
+   Date: 2026-03-01T12:00:00+00:00
+   Source: News Outlet
+   Summary: Article summary text
+```
+
+### Tool 3: Fetch
 
 - **Tool Name**: `jina_fetch`
 - **Description**: Fetch a URL and convert it to markdown or JSON using Jina Reader
@@ -329,6 +391,36 @@ For JSON format: a dictionary with the structure:
   "content": "Markdown content"
 }
 ```
+
+## Agent Skills
+
+This repo includes five **Agent Skills** that orchestrate the MCP's search and fetch tools into specialized workflows. Each skill follows the open [Agent Skills](https://agentskills.io/) specification and works with Claude Code, Codex CLI, and other compatible agents.
+
+All skills work **without** the MCP configured — they use the `ddgs` Python library and the Jina Reader HTTP API directly. If the DuckDuckGo MCP tools are available in the session, they prefer those automatically.
+
+### Install
+
+**Claude Code:**
+```bash
+# Install a specific skill
+claude install-skill ./skills/web-research
+
+# Or from GitHub
+claude install-skill github:CyranoB/duckduckgo-mcp/skills/web-research
+```
+
+**Manual (any agent):**
+Copy a skill folder from `skills/` into your agent's skills directory (e.g., `~/.claude/skills/` or `.claude/skills/`).
+
+### Available skills
+
+| Skill | Triggers on | Output |
+|-------|-------------|--------|
+| **[web-research](skills/web-research/)** | "research X", "look up X", "deep dive into X" | Adaptive report (quick answer / standard / deep dive) with citations |
+| **[fact-check](skills/fact-check/)** | "is it true that X", "verify this claim", "fact check this" | Verdict (Confirmed → False) with evidence for and against |
+| **[news-monitor](skills/news-monitor/)** | "what's new with X", "recent news about X", "catch me up on X" | Chronological news briefing with headlines and details |
+| **[competitive-intel](skills/competitive-intel/)** | "compare X vs Y", "which is better", "help me choose between" | Comparison matrix with pricing, pros/cons, and recommendation |
+| **[tech-radar](skills/tech-radar/)** | "should we adopt X", "is X production ready", "how mature is X" | Maturity scorecard (Adopt/Trial/Assess/Hold) with evidence |
 
 ## Notes
 
