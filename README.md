@@ -399,7 +399,19 @@ This repo includes five **Agent Skills** that orchestrate the MCP's search and f
 
 All skills work **without** the MCP configured — they use the `ddgs` Python library and the Jina Reader HTTP API directly. If the DuckDuckGo MCP tools are available in the session, they prefer those automatically.
 
-### Install
+### Install via Plugin Marketplace (recommended)
+
+Register this repo as a plugin marketplace, then install all five skills at once:
+
+```bash
+# Add the marketplace
+/plugin marketplace add CyranoB/duckduckgo-mcp
+
+# Install all 5 skills
+/plugin install duckduckgo-skills@duckduckgo-mcp
+```
+
+### Install individual skills
 
 **Claude Code:**
 ```bash

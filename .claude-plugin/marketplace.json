@@ -1,0 +1,34 @@
+{
+  "name": "duckduckgo-mcp",
+  "owner": {
+    "name": "CyranoB",
+    "email": ""
+  },
+  "metadata": {
+    "description": "DuckDuckGo search, news, and web research skills for Claude",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "duckduckgo-skills",
+      "description": "Five research skills powered by DuckDuckGo search and Jina Reader: web research, fact-checking, news monitoring, competitive intelligence, and technology radar assessments",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/web-research",
+        "./skills/fact-check",
+        "./skills/news-monitor",
+        "./skills/competitive-intel",
+        "./skills/tech-radar"
+      ],
+      "version": "1.0.0",
+      "author": {
+        "name": "CyranoB"
+      },
+      "homepage": "https://github.com/CyranoB/duckduckgo-mcp",
+      "repository": "https://github.com/CyranoB/duckduckgo-mcp",
+      "license": "MIT",
+      "keywords": ["search", "news", "research", "fact-check", "duckduckgo"]
+    }
+  ]
+}
