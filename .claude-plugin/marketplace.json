@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "duckduckgo-skills",
-      "description": "Five research skills powered by DuckDuckGo search and Jina Reader: web research, fact-checking, news monitoring, competitive intelligence, and technology radar assessments",
+      "description": "Five research skills powered by DuckDuckGo search and Jina Reader: web research, fact-checking, news monitoring, competitive intelligence, and technology evaluation (maturity assessments + product comparisons)",
       "source": "./",
       "strict": false,
       "skills": [
@@ -19,7 +19,7 @@
         "./skills/fact-check",
         "./skills/news-monitor",
         "./skills/competitive-intel",
-        "./skills/tech-radar"
+        "./skills/tech-advisor"
       ],
       "version": "1.0.0",
       "author": {
