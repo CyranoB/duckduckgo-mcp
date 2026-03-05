@@ -8,18 +8,20 @@
 [![Downloads](https://static.pepy.tech/badge/duckduckgo-mcp/month)](https://pepy.tech/project/duckduckgo-mcp)
 [![Smithery](https://smithery.ai/badge/@cyranob/duckduckgo-mcp)](https://smithery.ai/server/@cyranob/duckduckgo-mcp)
 
-*Most search engines are like wizards: impressive, vaguely alarming, and entirely uninterested in explaining themselves. This MCP server is more like a clerk at Unseen University—two services, no fuss: DuckDuckGo search and Jina-powered page fetches, neatly converted for LLM digestion. It will not save the world, but it will save you from copy-pasting it.*
+*Most search engines are like wizards: impressive, vaguely alarming, and entirely uninterested in explaining themselves. This MCP server is more like a clerk at Unseen University—three services, no fuss: DuckDuckGo search, news search, and Jina-powered page fetches, neatly converted for LLM digestion. It will not save the world, but it will save you from copy-pasting it.*
 
-A Model Context Protocol (MCP) server that provides two capabilities:
+A Model Context Protocol (MCP) server that provides three capabilities:
 1) Search the web using DuckDuckGo
-2) Fetch and convert web content using Jina Reader
+2) Search recent news using DuckDuckGo News
+3) Fetch and convert web content using Jina Reader
 
 ## Features
 
 - DuckDuckGo web search with safe search controls
+- DuckDuckGo news search with date-sorted results and source attribution
 - Fetch and convert URLs to markdown or JSON using Jina Reader
 - LLM-friendly output format option for search results
-- CLI for search, fetch, serve, and version commands
+- CLI for search, news, fetch, serve, and version commands
 - MCP tools for LLM integration
 - Docker support for containerized deployment
 
@@ -131,7 +133,6 @@ duckduckgo-mcp fetch "https://example.com" --format markdown
 duckduckgo-mcp fetch "https://example.com" --format json
 
 # Limit output length
-
 duckduckgo-mcp fetch "https://example.com" --max-length 2000
 
 # Include generated image alt text
@@ -424,7 +425,7 @@ Copy a skill folder from `skills/` into your agent's skills directory (e.g., `~/
 
 ## Notes
 
-- Search uses the `ddgs` package (renamed from `duckduckgo-search`).
+- Search and news search use the `ddgs` package (renamed from `duckduckgo-search`).
 - Fetch uses the Jina Reader API at `https://r.jina.ai/`.
 
 ## Contributing
