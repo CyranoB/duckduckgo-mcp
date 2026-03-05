@@ -6,7 +6,6 @@
 [![Python Version](https://img.shields.io/pypi/pyversions/web-forager?style=flat-square)](https://pypi.org/project/web-forager/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Downloads](https://static.pepy.tech/badge/web-forager/month)](https://pepy.tech/project/web-forager)
-[![Smithery](https://smithery.ai/badge/@cyranob/web-forager)](https://smithery.ai/server/@cyranob/web-forager)
 
 *The thing about information on the web is that it doesn't want to be found. It wants to hide behind cookie banners, keep itself to itself, and generally behave like a cat that knows it's time for the vet. Web Forager is the sort of dogged, slightly grubby assistant who goes out there anyway — accompanied by a duck of questionable temperament — rummages through DuckDuckGo, tries Exa when DuckDuckGo pretends not to be home, fetches pages via Jina Reader, and when Jina is having one of its days, simply grabs them by hand. The results come back neatly converted for LLM consumption, which is to say, in a format that would make a librarian weep with either joy or despair, depending on the librarian.*
 
@@ -53,14 +52,6 @@ pip install uvx
 
 # Install the Web Forager package
 uvx install web-forager
-```
-
-### Install via Smithery
-
-To install Web Forager for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cyranob/web-forager):
-
-```bash
-npx -y @smithery/cli install @cyranob/web-forager --client claude
 ```
 
 ### Install from source

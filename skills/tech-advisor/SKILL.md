@@ -6,29 +6,14 @@ metadata:
   version: "2.0.0"
 description: >
   ALWAYS use this skill when a user needs help choosing between tech products or evaluating
-  whether a technology is ready for adoption. This skill searches the web for current data
-  and produces structured, evidence-based recommendations — something Claude cannot do well
-  without it.
-
+  whether a technology is ready for adoption. Searches the web for current data and produces
+  structured, evidence-based recommendations with comparison tables and sourced evidence.
   Two modes: (1) Product comparison — "X vs Y", choosing between devices, editors, services,
-  frameworks, headphones, laptops, keyboards, or any tech products. (2) Technology maturity
-  assessment — "is X production ready", "should we adopt X", evaluating if a framework, tool,
-  runtime, or library is stable enough for real use.
-
-  Trigger on ANY of these patterns, even if the query seems simple enough to answer without
-  a skill — the skill adds web research, structured comparison tables, and sourced evidence
-  that raw Claude cannot provide:
-  - Comparing two or more products: "MacBook vs ThinkPad", "Supabase vs Firebase",
-    "RabbitMQ vs Kafka", "Sony WH-1000XM5 or Bose QC Ultra"
-  - Evaluating readiness: "is Bun stable enough", "is htmx viable for production",
-    "is Solid.js ready for a real app"
-  - Asking what to choose: "help me pick a message broker", "which iPad for note-taking",
-    "what code editor should I use"
-  - Asking for a recommendation with context: "we're a 4-person startup evaluating X",
-    "our CTO wants us to assess Y"
-
-  Do NOT trigger for: general web research, news monitoring, fact-checking claims,
-  competitive intelligence about companies, debugging code, or finding libraries.
+  frameworks, laptops, or any tech products. (2) Maturity assessment — "is X production ready",
+  "should we adopt X". Trigger on: "MacBook vs ThinkPad", "Supabase vs Firebase", "is Bun
+  stable enough", "help me pick a message broker", "which iPad for note-taking", "our CTO
+  wants us to evaluate X", or any question about choosing tech or evaluating readiness. Do NOT
+  trigger for general web research, news, fact-checking, competitive intel, or debugging.
 ---
 
 # Tech Advisor
