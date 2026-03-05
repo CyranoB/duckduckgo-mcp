@@ -15,6 +15,8 @@ A Model Context Protocol (MCP) server that provides three capabilities:
 2) Search recent news using DuckDuckGo News
 3) Fetch and convert web content using Jina Reader
 
+Also ships five **[Agent Skills](#agent-skills)** that orchestrate search + fetch into specialized workflows — research, fact-checking, news monitoring, competitive analysis, and technology evaluation. Skills work **independently from the MCP server** using the `ddgs` library and Jina Reader HTTP API directly, so you can use them in any agent that supports the [Agent Skills](https://agentskills.io/) spec.
+
 ## Features
 
 - DuckDuckGo web search with safe search controls
