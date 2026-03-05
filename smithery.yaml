@@ -1,14 +1,14 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
 
-name: duckduckgo-mcp
-displayName: DuckDuckGo MCP Server
+name: web-forager
+displayName: Web Forager
 description: Search the web using DuckDuckGo and fetch/convert web content using Jina Reader. Privacy-focused search with no API key required.
 visibility: public
 type: mcp
 author:
   name: Eddie Pick
   url: https://github.com/CyranoB
-repository: https://github.com/CyranoB/duckduckgo-mcp
+repository: https://github.com/CyranoB/web-forager
 keywords:
   - search
   - duckduckgo
@@ -19,9 +19,9 @@ keywords:
 files:
   - README.md
   - pyproject.toml
-  - src/duckduckgo_mcp/server.py
-  - src/duckduckgo_mcp/duckduckgo_search.py
-  - src/duckduckgo_mcp/jina_fetch.py
+  - src/web_forager/server.py
+  - src/web_forager/duckduckgo_search.py
+  - src/web_forager/jina_fetch.py
 
 startCommand:
   type: stdio
@@ -36,8 +36,8 @@ startCommand:
     (config) => ({
       command: 'uvx',
       args: config.debug
-        ? ['duckduckgo-mcp', 'serve', '--debug']
-        : ['duckduckgo-mcp', 'serve']
+        ? ['web-forager', 'serve', '--debug']
+        : ['web-forager', 'serve']
     })
   exampleConfig:
     debug: false

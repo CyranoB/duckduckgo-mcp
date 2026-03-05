@@ -24,4 +24,4 @@ RUN useradd --create-home --shell /bin/bash appuser
 USER appuser
 
 # Run the MCP server
-ENTRYPOINT ["duckduckgo-mcp", "serve"]
+ENTRYPOINT ["web-forager", "serve"]

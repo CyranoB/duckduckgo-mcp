@@ -42,8 +42,8 @@ import requests
 content = requests.get(f"https://r.jina.ai/{url}").text
 ```
 
-If an MCP tool called `mcp__duckduckgo__search` or `mcp__duckduckgo__jina_fetch` is
-available in the session, prefer those over the above.
+If MCP search/fetch tools are available in the session (e.g., `mcp__web_forager__search`,
+`mcp__duckduckgo__search`, or similar), prefer those over the above.
 
 ---
 

@@ -1,16 +1,16 @@
 {
-  "name": "duckduckgo-mcp",
+  "name": "web-forager",
   "owner": {
     "name": "CyranoB",
     "email": ""
   },
   "metadata": {
-    "description": "DuckDuckGo search, news, and web research skills for Claude",
+    "description": "Web search, news, and research skills for AI agents",
     "version": "1.0.0"
   },
   "plugins": [
     {
-      "name": "duckduckgo-skills",
+      "name": "forager-skills",
       "description": "Five research skills powered by DuckDuckGo search and Jina Reader: web research, fact-checking, news monitoring, competitive intelligence, and technology evaluation (maturity assessments + product comparisons)",
       "source": "./",
       "strict": false,
@@ -25,10 +25,10 @@
       "author": {
         "name": "CyranoB"
       },
-      "homepage": "https://github.com/CyranoB/duckduckgo-mcp",
-      "repository": "https://github.com/CyranoB/duckduckgo-mcp",
+      "homepage": "https://github.com/CyranoB/web-forager",
+      "repository": "https://github.com/CyranoB/web-forager",
       "license": "MIT",
-      "keywords": ["search", "news", "research", "fact-check", "duckduckgo"]
+      "keywords": ["search", "news", "research", "fact-check", "web-forager"]
     }
   ]
 }

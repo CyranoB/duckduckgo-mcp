@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Command line interface for DuckDuckGo MCP Server.
-This module provides the entry point for the `duckduckgo-mcp` command.
+Command line interface for Web Forager.
+This module provides the entry point for the `web-forager` command.
 """
 
 import argparse
@@ -20,7 +20,7 @@ def _handle_version(args: argparse.Namespace) -> int:
     """Handle the version command."""
     from . import __version__
 
-    print(f"DuckDuckGo MCP Server v{__version__}")
+    print(f"Web Forager v{__version__}")
 
     if not getattr(args, "debug", False):
         return 0
@@ -109,7 +109,7 @@ def _handle_serve(args: argparse.Namespace) -> int:
     """Handle the serve command."""
     from . import __version__
 
-    logging.info(f"Starting DuckDuckGo MCP Server v{__version__} (STDIO transport)")
+    logging.info(f"Starting Web Forager MCP Server v{__version__} (STDIO transport)")
     logging.info("Press Ctrl+C to stop the server")
 
     # Register "search" as an alias for "duckduckgo_search" for backward compatibility.
@@ -144,7 +144,7 @@ def _handle_serve(args: argparse.Namespace) -> int:
 def _setup_parser() -> argparse.ArgumentParser:
     """Set up the argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
-        description="DuckDuckGo MCP Server - Search and content retrieval via MCP protocol"
+        description="Web Forager - Search and content retrieval via MCP protocol"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

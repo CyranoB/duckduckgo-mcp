@@ -1,4 +1,4 @@
-"""DuckDuckGo MCP Server - A Model Context Protocol server for web search and content retrieval."""
+"""Web Forager - A search-and-fetch toolkit for AI agents via MCP and standalone Agent Skills."""
 
 from .duckduckgo_search import duckduckgo_search, search_duckduckgo
 from .jina_fetch import fetch_url, jina_fetch
@@ -11,7 +11,7 @@ except ImportError:
     # Fallback when package is installed without setuptools_scm
     from importlib.metadata import version as _version
 
-    __version__ = _version("duckduckgo-mcp")
+    __version__ = _version("web-forager")
 
 __all__ = [
     "mcp",

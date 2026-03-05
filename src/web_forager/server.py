@@ -10,4 +10,4 @@ from fastmcp import FastMCP
 
 # Create the single MCP server instance
 # All tools should import this instance and use the @mcp.tool() decorator
-mcp = FastMCP(name="duckduckgo_mcp")
+mcp = FastMCP(name="web_forager")

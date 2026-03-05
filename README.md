@@ -1,21 +1,21 @@
-# DuckDuckGo MCP Server
+# Web Forager
 
 ![Illustration of a determined scribe wielding a giant quill fighting a tangle of papers and monsters, with a duck in a cap at his side and stacks of documents and crates behind](assets/header.png)
 
-[![PyPI](https://img.shields.io/pypi/v/duckduckgo-mcp?style=flat-square)](https://pypi.org/project/duckduckgo-mcp/)
-[![Python Version](https://img.shields.io/pypi/pyversions/duckduckgo-mcp?style=flat-square)](https://pypi.org/project/duckduckgo-mcp/)
+[![PyPI](https://img.shields.io/pypi/v/web-forager?style=flat-square)](https://pypi.org/project/web-forager/)
+[![Python Version](https://img.shields.io/pypi/pyversions/web-forager?style=flat-square)](https://pypi.org/project/web-forager/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Downloads](https://static.pepy.tech/badge/duckduckgo-mcp/month)](https://pepy.tech/project/duckduckgo-mcp)
-[![Smithery](https://smithery.ai/badge/@cyranob/duckduckgo-mcp)](https://smithery.ai/server/@cyranob/duckduckgo-mcp)
+[![Downloads](https://static.pepy.tech/badge/web-forager/month)](https://pepy.tech/project/web-forager)
+[![Smithery](https://smithery.ai/badge/@cyranob/web-forager)](https://smithery.ai/server/@cyranob/web-forager)
 
-*Most search engines are like wizards: impressive, vaguely alarming, and entirely uninterested in explaining themselves. This MCP server is more like a clerk at Unseen University—three services, no fuss: DuckDuckGo search, news search, and Jina-powered page fetches, neatly converted for LLM digestion. It will not save the world, but it will save you from copy-pasting it.*
+*The thing about information on the web is that it doesn't want to be found. It wants to hide behind cookie banners, keep itself to itself, and generally behave like a cat that knows it's time for the vet. Web Forager is the sort of dogged, slightly grubby assistant who goes out there anyway — accompanied by a duck of questionable temperament — rummages through DuckDuckGo, tries Exa when DuckDuckGo pretends not to be home, fetches pages via Jina Reader, and when Jina is having one of its days, simply grabs them by hand. The results come back neatly converted for LLM consumption, which is to say, in a format that would make a librarian weep with either joy or despair, depending on the librarian.*
 
-A Model Context Protocol (MCP) server that provides three capabilities:
-1) Search the web using DuckDuckGo
-2) Search recent news using DuckDuckGo News
-3) Fetch and convert web content using Jina Reader
+A search-and-fetch toolkit for AI agents, available as an MCP server and as standalone Agent Skills:
+1. **Search** the web via DuckDuckGo
+2. **Search news** via DuckDuckGo News
+3. **Fetch** and convert web pages via Jina Reader
 
-Also ships five **[Agent Skills](#agent-skills)** that orchestrate search + fetch into specialized workflows — research, fact-checking, news monitoring, competitive analysis, and technology evaluation. Skills work **independently from the MCP server** using the `ddgs` library and Jina Reader HTTP API directly, so you can use them in any agent that supports the [Agent Skills](https://agentskills.io/) spec.
+Also ships five **[Agent Skills](#agent-skills)** that work independently — no MCP required — for research, fact-checking, news monitoring, competitive analysis, and technology evaluation.
 
 ## Features
 
@@ -25,6 +25,7 @@ Also ships five **[Agent Skills](#agent-skills)** that orchestrate search + fetc
 - LLM-friendly output format option for search results
 - CLI for search, news, fetch, serve, and version commands
 - MCP tools for LLM integration
+- Five standalone Agent Skills for specialized research workflows
 - Docker support for containerized deployment
 
 ## Installation
@@ -38,10 +39,10 @@ Also ships five **[Agent Skills](#agent-skills)** that orchestrate search + fetc
 
 ```bash
 # Using uv (recommended)
-uv pip install duckduckgo-mcp
+uv pip install web-forager
 
 # Or using pip
-pip install duckduckgo-mcp
+pip install web-forager
 ```
 
 ### Install with UVX (for Claude Desktop)
@@ -50,16 +51,16 @@ pip install duckduckgo-mcp
 # Install UVX if you haven't already
 pip install uvx
 
-# Install the DuckDuckGo MCP package
-uvx install duckduckgo-mcp
+# Install the Web Forager package
+uvx install web-forager
 ```
 
 ### Install via Smithery
 
-To install DuckDuckGo MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cyranob/duckduckgo-mcp):
+To install Web Forager for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cyranob/web-forager):
 
 ```bash
-npx -y @smithery/cli install @cyranob/duckduckgo-mcp --client claude
+npx -y @smithery/cli install @cyranob/web-forager --client claude
 ```
 
 ### Install from source
@@ -68,8 +69,8 @@ For development or to get the latest changes:
 
 ```bash
 # Clone the repository
-git clone https://github.com/CyranoB/duckduckgo-mcp.git
-cd duckduckgo-mcp
+git clone https://github.com/CyranoB/web-forager.git
+cd web-forager
 
 # Install with uv (recommended)
 uv pip install -e .
@@ -84,13 +85,13 @@ Build and run with Docker:
 
 ```bash
 # Build the image (uses version from latest git tag)
-docker build --build-arg VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//') -t duckduckgo-mcp .
+docker build --build-arg VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//') -t web-forager .
 
 # Or specify a version manually
-docker build --build-arg VERSION=2.0.2 -t duckduckgo-mcp .
+docker build --build-arg VERSION=2.0.2 -t web-forager .
 
 # Run the server (MCP servers use STDIO, so typically run within an MCP client)
-docker run -i duckduckgo-mcp
+docker run -i web-forager
 ```
 
 ## Usage
@@ -99,56 +100,56 @@ docker run -i duckduckgo-mcp
 
 ```bash
 # Start the server in STDIO mode (for use with MCP clients like Claude)
-duckduckgo-mcp serve
+web-forager serve
 
 # Enable debug logging
-duckduckgo-mcp serve --debug
+web-forager serve --debug
 ```
 
 ### Testing the Search Tool
 
 ```bash
 # Search DuckDuckGo (JSON output, default)
-duckduckgo-mcp search "your search query" --max-results 5 --safesearch moderate
+web-forager search "your search query" --max-results 5 --safesearch moderate
 
 # Search with LLM-friendly text output
-duckduckgo-mcp search "your search query" --output-format text
+web-forager search "your search query" --output-format text
 ```
 
 ### Testing the News Search Tool
 
 ```bash
 # Search DuckDuckGo news (JSON output, default)
-duckduckgo-mcp news "your search query" --max-results 10 --safesearch moderate
+web-forager news "your search query" --max-results 10 --safesearch moderate
 
 # Search with LLM-friendly text output
-duckduckgo-mcp news "your search query" --output-format text
+web-forager news "your search query" --output-format text
 ```
 
 ### Testing the Fetch Tool
 
 ```bash
 # Fetch a URL and return markdown
-duckduckgo-mcp fetch "https://example.com" --format markdown
+web-forager fetch "https://example.com" --format markdown
 
 # Fetch a URL and return JSON
-duckduckgo-mcp fetch "https://example.com" --format json
+web-forager fetch "https://example.com" --format json
 
 # Limit output length
-duckduckgo-mcp fetch "https://example.com" --max-length 2000
+web-forager fetch "https://example.com" --max-length 2000
 
 # Include generated image alt text
-duckduckgo-mcp fetch "https://example.com" --with-images
+web-forager fetch "https://example.com" --with-images
 ```
 
 ### Version Information
 
 ```bash
 # Show version
-duckduckgo-mcp version
+web-forager version
 
 # Show detailed version info
-duckduckgo-mcp version --debug
+web-forager version --debug
 ```
 
 ## MCP Client Setup
@@ -167,9 +168,9 @@ Python 3.10-3.13 is supported (3.14 not yet). Use `--python ">=3.10,<3.14"` with
    ```json
     {
       "mcpServers": {
-        "duckduckgo": {
+        "web-forager": {
           "command": "uvx",
-          "args": ["--python", ">=3.10,<3.14", "duckduckgo-mcp", "serve"]
+          "args": ["--python", ">=3.10,<3.14", "web-forager", "serve"]
         }
       }
     }
@@ -182,7 +183,7 @@ Python 3.10-3.13 is supported (3.14 not yet). Use `--python ">=3.10,<3.14"` with
 Add a local stdio server:
 
 ```bash
-claude mcp add --transport stdio duckduckgo -- uvx --python ">=3.10,<3.14" duckduckgo-mcp serve
+claude mcp add --transport stdio web-forager -- uvx --python ">=3.10,<3.14" web-forager serve
 ```
 
 Optional: `claude mcp list` to verify, or `claude mcp add-from-claude-desktop` to import.
@@ -192,15 +193,15 @@ Optional: `claude mcp list` to verify, or `claude mcp add-from-claude-desktop` t
 Add via CLI:
 
 ```bash
-codex mcp add duckduckgo -- uvx --python ">=3.10,<3.14" duckduckgo-mcp serve
+codex mcp add web-forager -- uvx --python ">=3.10,<3.14" web-forager serve
 ```
 
 Or configure `~/.codex/config.toml`:
 
 ```toml
-[mcp_servers.duckduckgo]
+[mcp_servers.web-forager]
 command = "uvx"
-args = ["--python", ">=3.10,<3.14", "duckduckgo-mcp", "serve"]
+args = ["--python", ">=3.10,<3.14", "web-forager", "serve"]
 ```
 
 ### OpenCode
@@ -211,9 +212,9 @@ Add to your OpenCode config (`~/.config/opencode/opencode.json` or project `open
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "duckduckgo": {
+    "web-forager": {
       "type": "local",
-      "command": ["uvx", "--python", ">=3.10,<3.14", "duckduckgo-mcp", "serve"],
+      "command": ["uvx", "--python", ">=3.10,<3.14", "web-forager", "serve"],
       "enabled": true
     }
   }
@@ -229,9 +230,9 @@ Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
 ```json
 {
   "mcpServers": {
-    "duckduckgo": {
+    "web-forager": {
       "command": "uvx",
-      "args": ["--python", ">=3.10,<3.14", "duckduckgo-mcp", "serve"]
+      "args": ["--python", ">=3.10,<3.14", "web-forager", "serve"]
     }
   }
 }
@@ -399,7 +400,7 @@ For JSON format: a dictionary with the structure:
 
 This repo includes five **Agent Skills** that orchestrate the MCP's search and fetch tools into specialized workflows. Each skill follows the open [Agent Skills](https://agentskills.io/) specification and works with Claude Code, Codex CLI, and other compatible agents.
 
-All skills work **without** the MCP configured — they use the `ddgs` Python library and the Jina Reader HTTP API directly. If the DuckDuckGo MCP tools are available in the session, they prefer those automatically.
+All skills work **without** the MCP configured — they use the `ddgs` Python library and the Jina Reader HTTP API directly. If MCP tools are available in the session, they prefer those automatically.
 
 ### Install via Plugin Marketplace (recommended)
 
@@ -407,10 +408,10 @@ Register this repo as a plugin marketplace, then install all five skills at once
 
 ```bash
 # Add the marketplace
-/plugin marketplace add CyranoB/duckduckgo-mcp
+/plugin marketplace add CyranoB/web-forager
 
 # Install all 5 skills
-/plugin install duckduckgo-skills@duckduckgo-mcp
+/plugin install forager-skills@web-forager
 ```
 
 ### Install individual skills
@@ -421,7 +422,7 @@ Register this repo as a plugin marketplace, then install all five skills at once
 claude install-skill ./skills/web-research
 
 # Or from GitHub
-claude install-skill github:CyranoB/duckduckgo-mcp/skills/web-research
+claude install-skill github:CyranoB/web-forager/skills/web-research
 ```
 
 **Manual (any agent):**
@@ -432,7 +433,7 @@ Copy a skill folder from `skills/` into your agent's skills directory (e.g., `~/
 | Skill | Triggers on | Output |
 |-------|-------------|--------|
 | **[web-research](skills/web-research/)** | "research X", "look up X", "deep dive into X" | Adaptive report (quick answer / standard / deep dive) with citations |
-| **[fact-check](skills/fact-check/)** | "is it true that X", "verify this claim", "fact check this" | Verdict (Confirmed → False) with evidence for and against |
+| **[fact-check](skills/fact-check/)** | "is it true that X", "verify this claim", "fact check this" | Verdict (Confirmed -> False) with evidence for and against |
 | **[news-monitor](skills/news-monitor/)** | "what's new with X", "recent news about X", "catch me up on X" | Chronological news briefing with headlines and details |
 | **[competitive-intel](skills/competitive-intel/)** | "compare X vs Y", "which is better", "help me choose between" | Comparison matrix with pricing, pros/cons, and recommendation |
 | **[tech-advisor](skills/tech-advisor/)** | "should we adopt X", "is X production ready", "X vs Y for my needs" | Maturity scorecard (Adopt/Trial/Assess/Hold) or product comparison with evidence |
@@ -454,7 +455,7 @@ Contributions are welcome! Here's how you can contribute:
 
 ## Support
 
-If you encounter any issues or have questions, please [open an issue](https://github.com/CyranoB/duckduckgo-mcp/issues).
+If you encounter any issues or have questions, please [open an issue](https://github.com/CyranoB/web-forager/issues).
 
 ## License
 

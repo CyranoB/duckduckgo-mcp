@@ -3,9 +3,9 @@ requires = ["setuptools>=42", "wheel", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "duckduckgo-mcp"
+name = "web-forager"
 dynamic = ["version"]
-description = "DuckDuckGo search and content retrieval tool for MCP (Model Context Protocol)"
+description = "A search-and-fetch toolkit for AI agents — MCP server and standalone Agent Skills powered by DuckDuckGo and Jina Reader"
 readme = "README.md"
 authors = [
     {name = "Eddie Pick", email = "eddie@pick.fr"}
@@ -43,19 +43,19 @@ dev = [
 ]
 
 [project.scripts]
-duckduckgo-mcp = "duckduckgo_mcp.cli:main"
+web-forager = "web_forager.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/CyranoB/duckduckgo-mcp"
-Repository = "https://github.com/CyranoB/duckduckgo-mcp"
-Issues = "https://github.com/CyranoB/duckduckgo-mcp/issues"
+Homepage = "https://github.com/CyranoB/web-forager"
+Repository = "https://github.com/CyranoB/web-forager"
+Issues = "https://github.com/CyranoB/web-forager/issues"
 
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["duckduckgo_mcp", "duckduckgo_mcp.*"]
+include = ["web_forager", "web_forager.*"]
 
 [tool.setuptools_scm]
-write_to = "src/duckduckgo_mcp/_version.py"
+write_to = "src/web_forager/_version.py"
 version_scheme = "post-release"
 local_scheme = "no-local-version"  # This removes the local version component

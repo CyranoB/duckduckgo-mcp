@@ -34,9 +34,10 @@ plenty. Never fetch more than 3 pages.
 **News search** — the primary tool. Returns results sorted by date with timestamps
 and source outlets.
 
-If `mcp__duckduckgo__duckduckgo_news_search` is available, prefer it:
+If an MCP news search tool is available (e.g., `mcp__web_forager__duckduckgo_news_search`
+or `mcp__duckduckgo__duckduckgo_news_search`), prefer it:
 ```
-mcp__duckduckgo__duckduckgo_news_search(query="your query", max_results=10)
+mcp__web_forager__duckduckgo_news_search(query="your query", max_results=10)
 ```
 Each result includes `title`, `url`, `snippet`, `date`, and `source`.
 
@@ -49,10 +50,10 @@ for r in results:
 ```
 If `ddgs` isn't installed: `pip install ddgs`
 
-**General search** — use `mcp__duckduckgo__search` or `DDGS().text()` only if news
+**General search** — use an MCP search tool or `DDGS().text()` only if news
 search returns too few results.
 
-**Fetch** — use `mcp__duckduckgo__jina_fetch` or `curl -s "https://r.jina.ai/URL"`
+**Fetch** — use an MCP fetch tool or `curl -s "https://r.jina.ai/URL"`
 only when a snippet is too vague to summarize the event. Cap fetches with
 `max_length=3000` to avoid pulling giant pages.
 

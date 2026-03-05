@@ -1,5 +1,5 @@
-# This file configures the 'duckduckgo-mcp' command for UVX.
+# This file configures the 'web-forager' command for UVX.
 # All project metadata, dependencies, and build configurations are in pyproject.toml.
 
-[tool.uvx.tool.duckduckgo-mcp]
-entry_point = "duckduckgo_mcp.cli:main"
+[tool.uvx.tool.web-forager]
+entry_point = "web_forager.cli:main"
