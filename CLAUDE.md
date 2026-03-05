@@ -10,7 +10,7 @@ DuckDuckGo MCP server with three capabilities:
 - URL fetch + conversion via Jina Reader
 
 Also includes five Agent Skills (in `skills/`) that orchestrate search + fetch into
-specialized workflows: web-research, fact-check, news-monitor, competitive-intel, tech-radar.
+specialized workflows: web-research, fact-check, news-monitor, competitive-intel, tech-advisor.
 
 Implements MCP over STDIO using FastMCP.
 

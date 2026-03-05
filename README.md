@@ -433,7 +433,7 @@ Copy a skill folder from `skills/` into your agent's skills directory (e.g., `~/
 | **[fact-check](skills/fact-check/)** | "is it true that X", "verify this claim", "fact check this" | Verdict (Confirmed → False) with evidence for and against |
 | **[news-monitor](skills/news-monitor/)** | "what's new with X", "recent news about X", "catch me up on X" | Chronological news briefing with headlines and details |
 | **[competitive-intel](skills/competitive-intel/)** | "compare X vs Y", "which is better", "help me choose between" | Comparison matrix with pricing, pros/cons, and recommendation |
-| **[tech-radar](skills/tech-radar/)** | "should we adopt X", "is X production ready", "how mature is X" | Maturity scorecard (Adopt/Trial/Assess/Hold) with evidence |
+| **[tech-advisor](skills/tech-advisor/)** | "should we adopt X", "is X production ready", "X vs Y for my needs" | Maturity scorecard (Adopt/Trial/Assess/Hold) or product comparison with evidence |
 
 ## Notes
 
