@@ -7,12 +7,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Downloads](https://static.pepy.tech/badge/web-forager/month)](https://pepy.tech/project/web-forager)
 
-*The thing about information on the web is that it doesn't want to be found. It wants to hide behind cookie banners, keep itself to itself, and generally behave like a cat that knows it's time for the vet. Web Forager is the sort of dogged, slightly grubby assistant who goes out there anyway — accompanied by a duck of questionable temperament — rummages through DuckDuckGo, tries Exa when DuckDuckGo pretends not to be home, fetches pages via Jina Reader, and when Jina is having one of its days, simply grabs them by hand. The results come back neatly converted for LLM consumption, which is to say, in a format that would make a librarian weep with either joy or despair, depending on the librarian.*
+*The thing about information on the web is that it doesn't want to be found. It wants to hide behind cookie banners, keep itself to itself, and generally behave like a cat that knows it's time for the vet. Web Forager is the sort of dogged, slightly grubby assistant who goes out there anyway — accompanied by a duck of questionable temperament — rummages through DuckDuckGo, grabs pages directly when it can, and calls in Jina Reader when things get complicated. The results come back neatly converted for LLM consumption, which is to say, in a format that would make a librarian weep with either joy or despair, depending on the librarian.*
 
 A search-and-fetch toolkit for AI agents, available as an MCP server and as standalone Agent Skills:
 1. **Search** the web via DuckDuckGo
 2. **Search news** via DuckDuckGo News
-3. **Fetch** and convert web pages via Jina Reader
+3. **Fetch** and convert web pages (direct HTTP + trafilatura, Jina Reader fallback)
 
 Also ships five **[Agent Skills](#agent-skills)** that work independently — no MCP required — for research, fact-checking, news monitoring, competitive analysis, and technology evaluation.
 
@@ -20,7 +20,7 @@ Also ships five **[Agent Skills](#agent-skills)** that work independently — no
 
 - DuckDuckGo web search with safe search controls
 - DuckDuckGo news search with date-sorted results and source attribution
-- Fetch and convert URLs to markdown or JSON using Jina Reader
+- Fetch and convert URLs to markdown or JSON (direct HTTP + trafilatura, Jina Reader fallback)
 - LLM-friendly output format option for search results
 - CLI for search, news, fetch, serve, and version commands
 - MCP tools for LLM integration
@@ -263,8 +263,9 @@ def duckduckgo_news_search(
 
 ```python
 @mcp.tool()
-def jina_fetch(url: str, format: str = "markdown", max_length: int | None = None, with_images: bool = False) -> str | dict:
-    """Fetch a URL and convert it using Jina Reader."""
+def web_fetch(url: str, format: str = "markdown", max_length: int | None = None, with_images: bool = False) -> str | dict:
+    """Fetch a URL and convert it to markdown or JSON.
+    Tries direct HTTP fetch first, falls back to Jina Reader."""
 ```
 
 Example usage in an MCP client:
@@ -273,7 +274,7 @@ Example usage in an MCP client:
 # This is handled automatically by the MCP client
 results = duckduckgo_search("Python programming", max_results=3)
 news = duckduckgo_news_search("AI regulation 2026", max_results=5)
-content = jina_fetch("https://example.com", format="markdown")
+content = web_fetch("https://example.com", format="markdown")
 
 # Get LLM-friendly text output
 text_results = duckduckgo_search("Python programming", output_format="text")
@@ -363,15 +364,15 @@ Found 3 news results:
 
 ### Tool 3: Fetch
 
-- **Tool Name**: `jina_fetch`
-- **Description**: Fetch a URL and convert it to markdown or JSON using Jina Reader
+- **Tool Name**: `web_fetch`
+- **Description**: Fetch a URL and convert it to markdown or JSON. Tries direct HTTP fetch with trafilatura for fast content extraction, falls back to Jina Reader for JavaScript-heavy or bot-protected pages.
 
 #### Parameters
 
 - `url` (string, required): The URL to fetch and convert
 - `format` (string, optional, default: "markdown"): Output format ("markdown" or "json")
 - `max_length` (integer, optional): Maximum content length to return (None for no limit)
-- `with_images` (boolean, optional, default: false): Whether to include image alt text generation
+- `with_images` (boolean, optional, default: false): Whether to include images in the output
 
 #### Response
 
@@ -426,13 +427,13 @@ Copy a skill folder from `skills/` into your agent's skills directory (e.g., `~/
 | **[web-research](skills/web-research/)** | "research X", "look up X", "deep dive into X" | Adaptive report (quick answer / standard / deep dive) with citations |
 | **[fact-check](skills/fact-check/)** | "is it true that X", "verify this claim", "fact check this" | Verdict (Confirmed -> False) with evidence for and against |
 | **[news-monitor](skills/news-monitor/)** | "what's new with X", "recent news about X", "catch me up on X" | Chronological news briefing with headlines and details |
-| **[competitive-intel](skills/competitive-intel/)** | "compare X vs Y", "which is better", "help me choose between" | Comparison matrix with pricing, pros/cons, and recommendation |
+| **[competitive-intel](skills/competitive-intel/)** | "competitive landscape for X", "market study", "how do we compare to competitors" | Market landscape map or competitive positioning analysis with pricing, gaps, and recommendations |
 | **[tech-advisor](skills/tech-advisor/)** | "should we adopt X", "is X production ready", "X vs Y for my needs" | Maturity scorecard (Adopt/Trial/Assess/Hold) or product comparison with evidence |
 
 ## Notes
 
 - Search and news search use the `ddgs` package (renamed from `duckduckgo-search`).
-- Fetch uses the Jina Reader API at `https://r.jina.ai/`.
+- Fetch tries direct HTTP + [trafilatura](https://trafilatura.readthedocs.io/) first for speed, falls back to [Jina Reader](https://r.jina.ai/) for JavaScript-heavy or bot-protected pages.
 
 ## Contributing
 

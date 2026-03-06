@@ -12,7 +12,7 @@ from typing import Callable, Dict, List, Union
 
 from .duckduckgo_news import duckduckgo_news_search
 from .duckduckgo_search import duckduckgo_search
-from .jina_fetch import fetch_url
+from .web_fetch import fetch_url
 from .server import mcp
 
 

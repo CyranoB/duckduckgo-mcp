@@ -1,7 +1,7 @@
 """Web Forager - A search-and-fetch toolkit for AI agents via MCP and standalone Agent Skills."""
 
 from .duckduckgo_search import duckduckgo_search, search_duckduckgo
-from .jina_fetch import fetch_url, jina_fetch
+from .web_fetch import fetch_url, jina_fetch, web_fetch
 from .server import mcp
 
 try:
@@ -17,6 +17,7 @@ __all__ = [
     "mcp",
     "duckduckgo_search",
     "search_duckduckgo",
+    "web_fetch",
     "jina_fetch",
     "fetch_url",
     "__version__",
