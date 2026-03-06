@@ -235,6 +235,30 @@ Verify with:
 cursor-agent mcp list
 ```
 
+### Gemini CLI
+
+Add to your Gemini CLI settings file:
+- Global: `~/.gemini/settings.json`
+- Project: `.gemini/settings.json`
+
+```json
+{
+  "mcpServers": {
+    "web-forager": {
+      "command": "uvx",
+      "args": ["--python", ">=3.10,<3.14", "web-forager", "serve"],
+      "timeout": 30000
+    }
+  }
+}
+```
+
+Verify the server is configured:
+
+```bash
+gemini tools list
+```
+
 ## MCP Tools
 
 The server exposes these tools to MCP clients:
